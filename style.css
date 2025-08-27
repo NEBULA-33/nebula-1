@@ -1,0 +1,186 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    margin: 0;
+    padding: 20px;
+}
+
+#login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.login-box {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    width: 400px;
+}
+
+.main-container {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto; /* Sayfayı ortalamak için */
+}
+
+.content-panel { flex: 3; display: flex; flex-direction: column; gap: 20px; min-width: 600px; }
+.receipt-panel { flex: 1; background-color: #fff; border-radius: 8px; border: 1px solid #dddfe2; padding: 20px; height: fit-content; max-width: 450px; }
+section, .tab-content { background-color: #fff; border-radius: 8px; border: 1px solid #dddfe2; padding: 20px; }
+h1, h2, h3 { color: #0d47a1; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0; }
+h4 { margin-top: 15px; margin-bottom: 10px; color: #333; }
+form { display: flex; flex-direction: column; gap: 15px; }
+label { font-weight: 600; font-size: 0.9em; text-align: left; }
+input[type="text"], input[type="number"], input[type="password"], input[type="search"], select, textarea, input[type="date"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+button { background-color: #1877f2; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: 600; transition: background-color 0.2s; }
+button:hover { background-color: #166fe5; }
+button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+.secondary-btn { background-color: #6c757d; }
+.secondary-btn:hover { background-color: #5a6268; }
+.delete-btn { background-color: #fa3e3e; }
+.delete-btn:hover { background-color: #e02828; }
+.tabs { display: flex; background-color: #e7f3ff; border-radius: 8px; padding: 5px; gap: 5px; }
+.tab-btn { flex-grow: 1; background-color: transparent; color: #0d47a1; font-weight: 600; border: none; padding: 10px; }
+.tab-btn.active { background-color: #fff; color: #1877f2; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9em; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+th { background-color: #f5f6f7; }
+td .actions { display: flex; gap: 5px; }
+.message { padding: 10px; border-radius: 6px; margin-top: 10px; text-align: center; }
+.message.success { background-color: #e7f3ff; color: #1877f2; }
+.message.error { background-color: #ffebe8; color: #fa3e3e; }
+.plu-input-group { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+.plu-input-group input { margin-bottom: 0; }
+.quick-add-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
+.form-row { display: flex; gap: 15px; align-items: flex-end; }
+.form-group { flex: 1; }
+.form-actions { display: flex; gap: 10px; margin-top: 10px; }
+.checkbox-label { display: flex; align-items: center; gap: 10px; font-weight: normal;}
+hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+.stock-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.styled-form { display: flex; flex-direction: column; gap: 10px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #fcfcfc; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 10px 20px; border-radius: 8px; border: 1px solid #dddfe2; }
+.panel-header h1 { border-bottom: none; margin: 0; }
+.role-buttons { display: flex; gap: 15px; justify-content: center; }
+.hidden-by-role { display: none !important; }
+.manager-only { display: none; }
+.report-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+.report-card { background-color: #fcfcfc; border: 1px solid #ddd; border-radius: 8px; padding: 20px; text-align: left; cursor: pointer; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; }
+.report-card:hover { transform: translateY(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #1877f2; }
+.report-card h4 { margin-top: 0; color: #1877f2; font-size: 1.1em; }
+.report-card p { margin: 0; font-size: 0.9em; color: #666; flex-grow: 1; }
+#report-display #back-to-hub-btn { margin-bottom: 20px; }
+.report-filters { display: flex; gap: 5px; margin-bottom: 20px; }
+.filter-btn { background-color: #e7f3ff; color: #0d47a1; }
+.filter-btn.active { background-color: #1877f2; color: #fff; }
+.sub-tabs { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 15px; }
+.sub-tab-btn { padding: 10px 20px; cursor: pointer; border: none; background-color: transparent; font-size: 1em; font-weight: 600; color: #555; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.sub-tab-btn.active { color: #1877f2; border-bottom-color: #1877f2; }
+.sub-tab-content { display: none; }
+.sub-tab-content.active { display: block; }
+.scanned-product-display { padding: 10px; background-color: #e7f3ff; border-radius: 6px; text-align: center; font-weight: bold; color: #0d47a1; min-height: 20px; }
+.log-list { list-style-type: none; padding: 0; max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px;}
+.log-list li { padding: 8px; border-bottom: 1px solid #eee; }
+.log-list li:last-child { border-bottom: none; }
+.log-list li span { float: right; color: #666; font-size: 0.9em; }
+/* style.css dosyasının en sonuna eklenecek */
+
+.site-footer {
+    position: fixed;
+    bottom: 5px;
+    right: 10px;
+    font-size: 0.75em;
+    color: #888;
+    z-index: 101;
+    background-color: rgba(240, 242, 245, 0.7);
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+
+.site-footer p {
+    margin: 0;
+}
+/* =============================================== */
+/* YENİ EKLENEN STİLLER (Tüm Özellikler)      */
+/* =============================================== */
+
+/* Veresiye kartındaki telefon ve adres bilgileri için stil */
+.debt-person-card .person-contact {
+    font-size: 0.85em;
+    color: #555;
+    padding: 3px 0 3px 15px;
+    margin-top: 5px;
+    border-left: 3px solid #e7f3ff;
+}
+
+.debt-person-card .person-contact strong {
+    color: #333;
+}
+
+/* Ayarlar sekmesindeki Yönetim Listeleri için ortak stiller */
+#reason-list-container,
+#channel-list-container {
+    margin-top: 15px;
+}
+
+#reason-list-container ul,
+#channel-list-container ul {
+    list-style-type: none;
+    padding: 0;
+    max-height: 250px; /* Çok fazla eleman eklenirse kaydırma çubuğu çıksın */
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 5px;
+}
+
+#reason-list-container li,
+#channel-list-container li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background-color: #f5f6f7;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+#reason-list-container li:last-child,
+#channel-list-container li:last-child {
+    margin-bottom: 0;
+}
+
+/* Yönetim listelerindeki silme butonu daha küçük olsun */
+#reason-list-container .delete-btn,
+#channel-list-container .delete-btn {
+    padding: 4px 10px;
+    font-size: 0.9em;
+    line-height: 1;
+}
+
+/* Satış Fişindeki "Satış Kanalı" menüsünü diğerlerinden ayırmak için */
+.receipt-panel .form-group {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.receipt-panel .form-group label {
+    font-size: 0.9em;
+    margin-bottom: 5px;
+    display: block;
+}

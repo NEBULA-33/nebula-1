@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İşletme Asistanı</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h1>Tanrıverdi Tavukçuluk</h1>
+            <p>Lütfen bir rol seçerek devam edin:</p>
+            
+         <form id="login-form">
+                <label for="email">E-posta Adresi:</label>
+                <input type="email" id="email" required autocomplete="email">
+                <label for="password">Şifre:</label>
+                <input type="password" id="password" required autocomplete="current-password">
+                <button type="submit">Giriş Yap</button>
+                <p id="login-error-message" class="message error" style="display: none;"></p>
+            </form>
+
+        </div>
+    </div>
+
+    <div class="main-container" style="display: none;">
+        <main class="content-panel">
+            <header class="panel-header">
+                <h1>İşletme Paneli</h1>
+                <button id="logout-btn" class="secondary-btn">Çıkış Yap</button>
+            </header>
+            <section id="sales-section">
+                <h2>Hızlı Satış</h2>
+                <form id="barcode-sell-form">
+                    <input type="text" id="barcode-scan-input" placeholder="Ürün barkodunu okutun veya PLU girin..." autofocus>
+                </form>
+                <div id="quick-add-container"></div>
+                <p id="sales-message" class="message"></p>
+            </section>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="products">Ürün Yönetimi</button>
+                <button class="tab-btn" data-tab="stocks">Stok İşlemleri</button>
+                <button class="tab-btn" data-tab="butchering">Parçalama</button>
+                <button class="tab-btn" data-tab="debts-notes">Veresiye & Notlar</button>
+                <button class="tab-btn" data-tab="reports">Raporlar</button>
+                <button class="tab-btn" data-tab="settings">Ayarlar</button>
+            </div>
+            <div class="tab-content-wrapper">
+                <div id="products" class="tab-content active">
+                    <h3>Ürün Ekle/Düzenle</h3>
+                    <form id="product-form" class="styled-form">
+                        <input type="hidden" id="edit-product-id">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product-name">Ürün Adı:</label>
+                                <input type="text" id="product-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-category">Kategori:</label>
+                                <input type="text" id="product-category" placeholder="Örn: Kırmızı Et, İçecekler">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                             <div class="form-group">
+                                <label for="product-vat-rate">KDV Oranı:</label>
+                                <select id="product-vat-rate">
+                                    <option value="0.20">%20</option><option value="0.10">%10</option>
+                                    <option value="0.01">%1</option><option value="0.00">%0</option>
+                                </select>
+                            </div>
+                             <div class="form-group">
+                                <label class="checkbox-label" style="height:100%;"><input type="checkbox" id="is-weighable"> Tartılabilir Ürün mü?</label>
+                                <label class="checkbox-label"><input type="checkbox" id="show-in-quick-add"> 'Hızlı Ekle'de Gösterilsin mi?</label>
+                             </div>
+                        </div>
+                        <div id="plu-section" style="display: none;">
+                            <label>PLU Kodları:</label>
+                            <div id="plu-codes-container"></div>
+                            <button type="button" id="add-plu-btn" class="secondary-btn">+ PLU Ekle</button>
+                        </div>
+                        <div id="barcode-section">
+                            <label for="product-barcode">Ürün Barkodu:</label>
+                            <input type="text" id="product-barcode">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="purchase-price">Alış Fiyatı (TL):</label>
+                                <input type="number" id="purchase-price" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="selling-price">Satış Fiyatı (TL):</label>
+                                <input type="number" id="selling-price" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="stock-quantity">Mevcut Stok (Adet/Kg):</label>
+                                <input type="number" id="stock-quantity" step="0.001" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" id="product-submit-btn">Ürünü Ekle</button>
+                            <button type="button" id="cancel-edit-btn" class="secondary-btn" style="display:none;">İptal</button>
+                        </div>
+                    </form>
+                    <hr>
+                    <h3>Ürün Listesi</h3>
+                    <div id="product-list-container"></div>
+                </div>
+
+                <div id="stocks" class="tab-content">
+                    <div class="stock-sections">
+                        <div class="stock-section">
+                            <h3>Stok Girişi (Barkod ile)</h3>
+                            <form id="stock-in-form">
+                                <input type="text" id="stock-in-barcode-scan-input" placeholder="Giriş yapılacak ürün barkodunu okutun...">
+                            </form>
+                             <div id="stock-in-list-container"></div>
+                             <button id="confirm-stock-in-btn" disabled>Girişleri Onayla ve Stoğa Ekle</button>
+                             <p id="stock-in-message" class="message"></p>
+                        </div>
+                        <div class="stock-section">
+                            <h3>Stok Düşümü (Fire / Zayiat)</h3>
+                            <form id="wastage-form">
+                                <select id="wastage-product-select" required></select>
+                                <input type="number" id="wastage-quantity-input" placeholder="Miktar (Adet/Kg)" step="0.001" required>
+                                <select id="wastage-reason-select" required></select>
+                                <button type="submit">Stoktan Düş</button>
+                            </form>
+                            <p id="wastage-message" class="message"></p>
+                        </div>
+                         <div class="stock-section">
+                            <h3>İade Alma</h3>
+                            <form id="return-form">
+                                <select id="return-product-select" required></select>
+                                <input type="number" id="return-quantity-input" placeholder="İade Miktarı (Adet/Kg)" step="0.001" required>
+                                <select id="return-reason-select" required></select>
+                                <button type="submit">İade Al</button>
+                            </form>
+                             <p id="return-message" class="message"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="butchering" class="tab-content">
+                    <div class="content-columns">
+                        <div class="column">
+                            <h3>Parçalama İşlemini Başlat</h3>
+                            <form id="execute-butchering-form" class="styled-form">
+                                <label for="butcher-source-scan-input">Parçalanacak Ürünün Barkodunu Okutun:</label>
+                                <input type="text" id="butcher-source-scan-input" placeholder="Ana ürün barkodu...">
+                                <div id="scanned-source-product-name" class="scanned-product-display"></div>
+                                <label for="butcher-recipe-select">Uygulanacak Reçete:</label>
+                                <select id="butcher-recipe-select" required disabled></select>
+                                <label for="butcher-quantity-input">Parçalanacak Miktar (Kg/Adet):</label>
+                                <input type="number" id="butcher-quantity-input" step="0.001" required>
+                                <button type="submit">İşlemi Gerçekleştir ve Stokla</button>
+                                <p id="butcher-message" class="message"></p>
+                            </form>
+                            <hr>
+                            <div id="recipe-list-container"></div>
+                        </div>
+                        <div class="column">
+                            <h3>Reçete Ekle/Düzenle</h3>
+                            <form id="butchering-recipe-form" class="styled-form">
+                                <input type="hidden" id="edit-recipe-id">
+                                <label for="recipe-name">Reçete Adı:</label>
+                                <input type="text" id="recipe-name" placeholder="Örn: Bütün Tavuk Parçalama" required>
+                                <label for="recipe-source-product">Ana (Kaynak) Ürün:</label>
+                                <select id="recipe-source-product" required></select>
+                                <hr>
+                                <label>Çıktı Ürünleri ve Oranları (%):</label>
+                                <div id="recipe-outputs-container"></div>
+                                <button type="button" id="add-recipe-output-btn" class="secondary-btn">+ Çıktı Ekle</button>
+                                <div class="form-actions">
+                                    <button type="submit" id="save-recipe-btn">Reçeteyi Kaydet</button>
+                                    <button type="button" id="cancel-recipe-edit-btn" class="secondary-btn" style="display:none;">İptal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="debts-notes" class="tab-content">
+                    <div class="sub-tabs">
+                        <button class="sub-tab-btn active" data-subtab="debt-content">Veresiye Defteri</button>
+                        <button class="sub-tab-btn" data-subtab="notes-content">Kişisel Notlar</button>
+                    </div>
+                    <div id="debt-content" class="sub-tab-content active">
+
+                        <div id="debt-sale-container" class="manager-only">
+                            <h3>Veresiye Satış (Barkod ile)</h3>
+                            <div class="styled-form">
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
+                                        <label for="debt-sale-person-select">Müşteri Seç:</label>
+                                        <select id="debt-sale-person-select" required></select>
+                                    </div>
+                                    <div class="form-group" style="flex: 3;">
+                                        <label for="debt-sale-barcode-scan">Ürün Barkodunu Okut:</label>
+                                        <form id="debt-sale-form">
+                                            <input type="text" id="debt-sale-barcode-scan" placeholder="Ürün okutun...">
+                                        </form>
+                                    </div>
+                                </div>
+                                
+                                <h4>Satış Sepeti</h4>
+                                <div id="debt-sale-cart-container">
+                                    <p>Sepet boş.</p>
+                                </div>
+                                <div class="cart-summary">
+                                    <div class="summary-row grand-total">
+                                        <span>SEPET TOPLAMI:</span>
+                                        <span id="debt-sale-total">0.00 TL</span>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button id="debt-sale-confirm-btn" disabled>Seçili Müşterinin Borcuna Ekle</button>
+                                    <button id="debt-sale-clear-btn" class="secondary-btn">Sepeti Temizle</button>
+                                </div>
+                                <p id="debt-sale-message" class="message"></p>
+                            </div>
+                        </div>
+                        <hr class="manager-only">
+
+                        <h3>Yeni Borç/Alacak Kaydı</h3>
+                         <form id="debt-form" class="styled-form">
+                             <input type="hidden" id="debt-person-id">
+                             <input type="text" id="debt-person-name" placeholder="Kişi Adı Soyadı" required>
+                             <input type="tel" id="debt-person-phone" placeholder="Telefon Numarası (isteğe bağlı)">
+                             <textarea id="debt-person-address" placeholder="Adres ve Notlar (isteğe bağlı)" rows="2"></textarea>
+                             <input type="number" id="debt-amount" placeholder="Tutar (Borç için +, Ödeme için -)" step="0.01" required>
+                             <input type="text" id="debt-description" placeholder="Açıklama (Örn: Alışveriş, Nakit Ödeme)" required>
+                             <div class="form-actions">
+                                <button type="submit" id="debt-submit-button">Kaydet</button>
+                                <button type="button" id="clear-debt-form-button" class="secondary-btn">Formu Temizle</button>
+                             </div>
+                         </form>
+                         <hr>
+                         <h3>Veresiye Defteri</h3>
+                         <input type="search" id="debt-search-input" placeholder="Kişi adıyla ara...">
+                         <div id="debt-list-container"></div>
+                    </div>
+                    <div id="notes-content" class="sub-tab-content">
+                        <h3>Yeni Not Ekle</h3>
+                        <form id="note-form" class="styled-form">
+                            <textarea id="note-content" placeholder="Hatırlatıcı veya genel notlarınızı buraya yazın..." rows="4" required></textarea>
+                            <button type="submit">Notu Kaydet</button>
+                        </form>
+                        <hr>
+                        <h3>Kaydedilmiş Notlar</h3>
+                        <div id="note-list-container"></div>
+                    </div>
+                </div>
+
+                <div id="reports" class="tab-content">
+                    <div id="report-filters-container" class="styled-form manager-only" style="margin-bottom: 20px; display: none;">
+                        <div class="form-group">
+                            <label for="report-shop-select">Rapor Verisini Seçin:</label>
+                            <select id="report-shop-select">
+                                </select>
+                        </div>
+                    </div>
+                    <div id="report-hub">
+                        <h3>Rapor Paneli</h3>
+                        <p>Aşağıdan görüntülemek istediğiniz raporu seçin.</p>
+                        <div class="report-card-grid">
+                            <button class="report-card" data-report-id="ciroKar"><h4>Dönemsel Ciro ve Kâr</h4><p>İşletmenizin genel finansal performansını gösterir.</p></button>
+                            <button class="report-card" data-report-id="kanalSatis"><h4>Satış Kanalı Performansı</h4><p>Hangi satış kanalının (dükkan, online vb.) ne kadar ciro yaptığını analiz edin.</p></button>
+                            <button class="report-card" data-report-id="saatlikSatis"><h4>Saatlik Satış Yoğunluğu</h4><p>Günün en yoğun saatlerini analiz ederek personel planlaması yapın.</p></button>
+                             <button class="report-card" data-report-id="gunlukSatis"><h4>Haftanın Gününe Göre Satışlar</h4><p>Haftanın en verimli günlerini tespit edin.</p></button>
+                            <button class="report-card" data-report-id="ortalamaSepet"><h4>Ortalama Sepet Tutarı</h4><p>Müşterilerinizin tek seferde ortalama harcamasını izleyin.</p></button>
+                             <button class="report-card" data-report-id="gunSonu"><h4>Gün Sonu Özeti</h4><p>Seçilen bir günün tüm finansal özetini tek bir yerde görün.</p></button>
+                            <button class="report-card" data-report-id="enCokSatan"><h4>En Çok Satan Ürünler (Ciro)</h4><p>İşletmenize en çok parayı getiren lokomotif ürünleri listeler.</p></button>
+                            <button class="report-card" data-report-id="enCokKar"><h4>En Çok Kâr Getiren Ürünler</h4><p>Cirosundan bağımsız, en çok net kâr bırakan ürünleri belirler.</p></button>
+                            <button class="report-card" data-report-id="enAzSatan"><h4>En Az Satan Ürünler</h4><p>Rafta bekleyen ve sermayenizi bağlayan ürünleri tespit eder.</p></button>
+                             <button class="report-card" data-report-id="karMarji"><h4>Ürün Kârlılık Marjları</h4><p>Her ürünün satışından yüzde kaç kâr ettiğinizi analiz edin.</p></button>
+                             <button class="report-card" data-report-id="kategoriPerformans"><h4>Kategori Performans Analizi</h4><p>Hangi ürün kategorisinin daha başarılı olduğunu analiz eder.</p></button>
+                            <button class="report-card" data-report-id="fireZayiat"><h4>Fire/Zayiat Raporu</h4><p>Maliyet kaçaklarını ve operasyonel verimsizlikleri izler.</p></button>
+                            <button class="report-card" data-report-id="stokErime"><h4>Stok Erime Hızı Grafiği</h4><p>Bir ürünün satış hızını ve ne zaman tükeneceğini öngörür.</p></button>
+                            <button class="report-card" data-report-id="dusukStok"><h4>Düşük Stok Uyarısı</h4><p>Kritik seviyenin altına düşen ürünleri anında görün.</p></button>
+                            <button class="report-card" data-report-id="hareketsizStok"><h4>Hareketsiz Stok Raporu</h4><p>Belirli bir süredir hiç satılmamış ürünleri tespit edin.</p></button>
+                            <button class="report-card" data-report-id="stokGirisGecmisi"><h4>Stok Giriş Geçmişi</h4><p>Yaptığınız tüm stok girişlerini tarih bazında listeleyin.</p></button>
+                            <button class="report-card" data-report-id="stokDegeri"><h4>Mevcut Stok Değeri</h4><p>Dükkanınızdaki tüm ürünlerin toplam maliyet değerini görün.</p></button>
+                            <button class="report-card" data-report-id="iadeRaporu"><h4>İade Edilen Ürünler Raporu</h4><p>En çok iade edilen ürünleri ve nedenlerini analiz edin.</p></button>
+                            <button class="report-card" data-report-id="parcalamaVerim"><h4>Parçalama Verimlilik Raporu</h4><p>Parçalama işlemlerinin kârlılığını ölçün.</p></button>
+                            <button class="report-card" data-report-id="birlikteSatilan"><h4>Birlikte Satılan Ürünler</h4><p>Çapraz satış fırsatları için müşteri sepetlerini analiz edin.</p></button>
+                            <button class="report-card" data-report-id="islemKayitlari"><h4>Tüm İşlem Kayıtları</h4><p>Sistemdeki tüm operasyonel kayıtların detaylı listesi.</p></button>
+                        </div>
+                    </div>
+                    <div id="report-display" style="display: none;">
+                        <button id="back-to-hub-btn" class="secondary-btn">« Rapor Paneline Dön</button>
+                        <h3 id="report-display-title"></h3>
+                        <div id="report-display-content"></div>
+                    </div>
+                </div>
+                
+                <div id="settings" class="tab-content">
+                    <h3>Veri Yönetimi</h3>
+                    <button id="export-data-btn">Verileri Yedekle</button>
+                    <button id="import-data-btn">Yedekten Geri Yükle</button>
+                    <input type="file" id="import-file-input" hidden accept=".json">
+                    <hr>
+                    <h3>Satış Kanalları Yönetimi</h3>
+                    <p>Satış fişinde görünecek satış kanallarını (örn: Dükkan, Online) yönetin.</p>
+                    <form id="channel-management-form" class="styled-form form-row">
+                        <div class="form-group" style="flex: 3;">
+                            <label for="new-channel-input">Yeni Kanal:</label>
+                            <input type="text" id="new-channel-input" required placeholder="Örn: Trendyol">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <button type="submit" style="width: 100%; height: 42px; align-self: flex-end;">Kanal Ekle</button>
+                        </div>
+                    </form>
+                    <div id="channel-list-container">
+                        </div>
+                    <hr>
+                    <h3>Fire/İade Nedenleri Yönetimi</h3>
+                    <p>Stok ve iade ekranlarındaki seçim menüsüne yeni nedenler ekleyin veya mevcutları silin.</p>
+                    <form id="reason-management-form" class="styled-form form-row">
+                        <div class="form-group" style="flex: 3;">
+                            <label for="new-reason-input">Yeni Neden:</label>
+                            <input type="text" id="new-reason-input" required placeholder="Örn: Nakliye Hasarı">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <button type="submit" style="width: 100%; height: 42px; align-self: flex-end;">Neden Ekle</button>
+                        </div>
+                    </form>
+                    <div id="reason-list-container">
+                        </div>
+                    <hr>
+                    <h3>Giriş Kayıtları (Son 50)</h3>
+                    <div id="access-log-container"></div>
+                    <hr>
+                    <h3>İşlem Kayıtları (Son 500)</h3>
+                    <div id="audit-log-container"></div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="receipt-panel">
+             <h2>Satış Fişi</h2>
+            <div id="cart-items-container"></div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Ara Toplam:</span>
+                    <span id="subtotal">0.00 TL</span>
+                </div>
+                <div id="vat-breakdown"></div>
+                <div class="summary-row grand-total">
+                    <span>GENEL TOPLAM:</span>
+                    <span id="grand-total">0.00 TL</span>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="sales-channel-select">Satış Kanalı:</label>
+                    <select id="sales-channel-select"></select>
+                </div>
+            </div>
+            <div class="summary-row grand-total">
+                <span>GENEL TOPLAM:</span>
+                <span id="grand-total">0.00 TL</span>
+            </div>
+
+            <div class="payment-section">
+                <div class="form-group">
+                    <label for="amount-paid">Ödenen Tutar (TL):</label>
+                    <input type="number" id="amount-paid" step="0.01" placeholder="Nakit Tutar Girin...">
+                </div>
+                <div class="summary-row change-due">
+                    <span>PARA ÜSTÜ:</span>
+                    <span id="change-due">0.00 TL</span>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <button id="complete-sale-btn" disabled>Satışı Tamamla</button>
+                <button id="clear-cart-btn" class="delete-btn">Sepeti Temizle</button>
+            </div>
+        </aside>
+    </div>
+    <footer class="site-footer">
+        <p>This software was developed with contributions from Nebula.</p>
+    </footer>
+    <script type="module" src="./scripts/main.js"></script>
+</body>
+</html>
