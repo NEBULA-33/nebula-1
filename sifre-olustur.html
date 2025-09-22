@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yönetici Şifre Hash Oluşturucu</title>
+    <style>body { font-family: sans-serif; padding: 20px; }</style>
+</head>
+<body>
+    <h1>Yönetici Şifresi Oluşturucu</h1>
+    <p>Yeni yönetici şifrenizi buraya girin ve "Hash Oluştur" butonuna basın.</p>
+    <input type="text" id="password" placeholder="Yeni şifre..." size="30">
+    <button onclick="generateHash()">Hash Oluştur</button>
+    <hr>
+    <h3>Oluşturulan Hash Değeri:</h3>
+    <p>Bu değeri kopyalayıp <code>scripts/authManager.js</code> dosyasındaki <code>MANAGER_PASSWORD_HASH</code> değişkenine yapıştırın.</p>
+    <code id="result" style="word-break: break-all; background: #eee; padding: 10px; display: block;"></code>
+
+    <script>
+        async function generateHash() {
+            const text = document.getElementById('password').value;
+            if (!text) {
+                alert('Lütfen bir şifre girin.');
+                return;
+            }
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            document.getElementById('result').textContent = hashHex;
+        }
+    </script>
+</body>
+</html>

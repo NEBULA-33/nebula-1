@@ -183,4 +183,184 @@ hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
     font-size: 0.9em;
     margin-bottom: 5px;
     display: block;
+}/* style.css dosyasının en sonuna ekleyin */
+
+/* ESKİ TAB-BTN STİLLERİNİ GEÇERSİZ KILMA */
+.tab-btn {
+    all: unset; /* Eski tüm stilleri sıfırla */
+}
+
+/* ANA YAPIYI 3 SÜTUNLU HALE GETİRME */
+.main-container {
+    max-width: 100%; /* Tam genişlik kullan */
+    height: calc(100vh - 40px); /* Yüksekliği ekran boyutuna göre ayarla */
+    padding: 0; /* Dış boşlukları sıfırla */
+    margin: 0 auto;
+    gap: 0; /* Sütunlar arası boşluğu kaldır */
+}
+
+/* YENİ YAN MENÜ (SIDEBAR) STİLLERİ */
+.side-navbar {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    background-color: #0d47a1; /* Resimdeki koyu mavi renk */
+    color: white;
+    flex-shrink: 0; /* Küçülmesini engelle */
+    padding: 20px 0;
+}
+
+.side-navbar .navbar-header {
+    padding: 0 20px 20px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.side-navbar h3 {
+    color: white;
+    border: none;
+    margin: 0;
+    text-align: center;
+}
+
+.side-navbar .nav-links {
+    flex-grow: 1;
+    margin-top: 20px;
+}
+
+.nav-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background-color: transparent;
+    color: #e0e0e0; /* Hafif soluk beyaz */
+    padding: 15px 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.nav-btn.active {
+    background-color: #f0f2f5; /* Ana arka plan rengi */
+    color: #0d47a1; /* Koyu mavi metin */
+    border-left: 3px solid #1877f2; /* Aktif olduğunu belirten mavi çizgi */
+    font-weight: 600;
+}
+
+.side-navbar .navbar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-footer #logout-btn {
+    width: 100%;
+}
+
+
+/* ANA İÇERİK VE SATIŞ FİŞİ PANELİ AYARLARI */
+.content-panel {
+    flex-grow: 1; /* Geri kalan tüm alanı kapla */
+    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu çıksın */
+    padding: 20px;
+    background-color: #f0f2f5;
+}
+
+/* İçerik bölümlerindeki başlıkların üst boşluğunu kaldır */
+.tab-content h3, .tab-content h2 {
+    margin-top: 0;
+}
+
+.receipt-panel {
+    flex-shrink: 0; /* Küçülmesini engelle */
+    height: 100%;
+    border: none;
+    border-left: 1px solid #dddfe2;
+    border-radius: 0;
+}
+
+/* Eski tabs div'i artık kullanılmadığı için gizleyelim */
+.tabs {
+    display: none;
+}
+/* style.css dosyasının en sonuna ekleyin */
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.cart-item-details {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.item-name {
+    font-weight: 600;
+}
+
+.item-total {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.quantity-controls .item-qty {
+    padding: 0 10px;
+    font-size: 1em;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+
+.quantity-btn {
+    background-color: #f0f2f5;
+    color: #333;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+.quantity-btn:hover {
+    background-color: #e0e2e5;
+}
+
+.quantity-btn:first-child {
+    border-right: 1px solid #ccc;
+    border-radius: 5px 0 0 5px;
+}
+
+.quantity-btn:last-child {
+    border-left: 1px solid #ccc;
+    border-radius: 0 5px 5px 0;
+}
+
+.cart-item-controls .delete-btn {
+    padding: 6px 10px;
+    font-size: 1em;
 }

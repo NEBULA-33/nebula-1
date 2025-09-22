@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         managerLoginForm: document.getElementById('manager-login-form'),
         managerPasswordInput: document.getElementById('manager-password'),
         passwordErrorMessage: document.getElementById('password-error-message'),
-        tabs: document.querySelector('.tabs'),
         salesMessage: document.getElementById('sales-message'),
         barcodeSellForm: document.getElementById('barcode-sell-form'),
         barcodeScanInput: document.getElementById('barcode-scan-input'),
@@ -126,6 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
         channelManagementForm: document.getElementById('channel-management-form'),
         newChannelInput: document.getElementById('new-channel-input'),
         channelListContainer: document.getElementById('channel-list-container'),
+        sideNavbar: document.querySelector('.side-navbar'),
+        
     };
 
     async function startApp() {
@@ -141,22 +142,23 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeNotesManager(uiElements);
         initializeSettingsManager(uiElements);
 
-        uiElements.tabs.addEventListener('click', (e) => {
-            const target = e.target.closest('.tab-btn');
-            if (!target || target.classList.contains('active')) return;
-            if (target.classList.contains('hidden-by-role')) return;
+        uiElements.sideNavbar.addEventListener('click', (e) => { 
+    // '.tab-btn' yerine yeni buton sınıfımız olan '.nav-btn'i arıyoruz
+    const target = e.target.closest('.nav-btn');
+    if (!target || target.classList.contains('active')) return;
+    if (target.classList.contains('hidden-by-role')) return;
 
-            const currentActiveTab = uiElements.tabs.querySelector('.active');
-            if (currentActiveTab) {
-                const currentContent = document.getElementById(currentActiveTab.dataset.tab);
-                if (currentContent) currentContent.classList.remove('active');
-                currentActiveTab.classList.remove('active');
-            }
-            target.classList.add('active');
-            const newContent = document.getElementById(target.dataset.tab);
-            if (newContent) newContent.classList.add('active');
-            renderAll();
-        });
+    const currentActiveTab = uiElements.sideNavbar.querySelector('.active'); // '.tabs' yerine '.sideNavbar'
+    if (currentActiveTab) {
+        const currentContent = document.getElementById(currentActiveTab.dataset.tab);
+        if (currentContent) currentContent.classList.remove('active');
+        currentActiveTab.classList.remove('active');
+    }
+    target.classList.add('active');
+    const newContent = document.getElementById(target.dataset.tab);
+    if (newContent) newContent.classList.add('active');
+    renderAll();
+});
 
         if (uiElements.subTabsContainer) {
             uiElements.subTabsContainer.addEventListener('click', (e) => {

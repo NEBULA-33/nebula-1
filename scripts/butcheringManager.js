@@ -3,6 +3,7 @@ import { renderAll } from './uiManager.js';
 import { showMessage } from './utils.js';
 import { logAction } from './logManager.js';
 import { supabase } from './supabaseClient.js';
+import { getCurrentRole } from './authManager.js';
 
 let uiElements = {};
 
@@ -302,5 +303,13 @@ export function initializeButcheringManager(elements) {
     if (uiElements.executeButcheringForm) {
         uiElements.executeButcheringForm.addEventListener('submit', executeButchering);
     }
+      const role = getCurrentRole();
+    if (role !== 'manager' && role !== 'yönetici') {
+        const recipeFormColumn = uiElements.butcheringRecipeForm.closest('.column');
+        if (recipeFormColumn) {
+            recipeFormColumn.style.display = 'none';
+        }
+    }
+
     resetRecipeForm();
 }

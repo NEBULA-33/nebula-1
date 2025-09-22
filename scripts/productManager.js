@@ -4,6 +4,7 @@ import { getCurrentRole } from './authManager.js';
 import { logAction } from './logManager.js';
 import { supabase } from './supabaseClient.js';
 
+
 let uiElements = {};
 
 // Veri değişikliğinden sonra arayüzü yenilemek için yardımcı fonksiyon
@@ -176,13 +177,13 @@ function editProduct(id) {
     
     toggleProductFields();
 
-    const role = getCurrentRole();
-    const isManager = (role === 'manager');
+  const role = getCurrentRole();
+    const isManager = (role === 'manager' || role === 'yönetici'); // Rol adını kontrol edelim
     
+    // YÖNETİCİ DEĞİLSE, SADECE YÖNETİCİYE ÖZEL ALANLARI KİLİTLE
     uiElements.purchasePriceInput.disabled = !isManager;
-    // Satış fiyatı ve stok düzenlemesi herkese açık olsun
-    // uiElements.sellingPriceInput.disabled = !isManager; 
-    // uiElements.stockQuantityInput.disabled = !isManager;
+    uiElements.sellingPriceInput.disabled = !isManager; 
+    uiElements.stockQuantityInput.disabled = !isManager;
     
     uiElements.productSubmitBtn.textContent = 'Ürünü Güncelle';
     uiElements.cancelEditBtn.style.display = 'inline-block';

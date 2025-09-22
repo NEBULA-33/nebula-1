@@ -48,6 +48,34 @@ export function clearCart() {
     state.currentCart = [];
     renderAll();
 }
+export function increaseCartItemQuantity(cartId) {
+    const item = state.currentCart.find(i => i.cartId === cartId);
+    if (!item) return;
+
+    // Stok kontrolü yap
+    const productInStock = state.products.find(p => p.id === item.id);
+    // Ürünün mevcut stok miktarı, sepetteki miktarından fazla olmalı
+    if (productInStock && productInStock.stock > item.quantity) {
+        item.quantity += 1;
+        renderAll();
+    } else {
+        alert('Stokta yeterli ürün yok!');
+    }
+}
+
+export function decreaseCartItemQuantity(cartId) {
+    const item = state.currentCart.find(i => i.cartId === cartId);
+    if (!item) return;
+
+    item.quantity -= 1;
+
+    // Eğer miktar 0'a düşerse ürünü sepetten tamamen kaldır
+    if (item.quantity <= 0) {
+        removeFromCart(cartId);
+    } else {
+        renderAll();
+    }
+}
 
 export async function completeSale() {
     if (state.currentCart.length === 0) return;
@@ -138,6 +166,8 @@ export function initializeSalesManager(elements) {
     window.app = window.app || {};
     window.app.addToCart = addToCart;
     window.app.removeFromCart = removeFromCart;
+    window.app.increaseCartItemQuantity = increaseCartItemQuantity;
+    window.app.decreaseCartItemQuantity = decreaseCartItemQuantity;
     if (uiElements.barcodeSellForm) uiElements.barcodeSellForm.addEventListener('submit', handleBarcodeSell);
     if (uiElements.completeSaleBtn) uiElements.completeSaleBtn.addEventListener('click', completeSale);
     if (uiElements.clearCartBtn) uiElements.clearCartBtn.addEventListener('click', clearCart);

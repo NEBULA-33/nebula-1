@@ -37,16 +37,24 @@ export function applyRolePermissions() {
             el.style.display = 'none';
         });
 
-        const hiddenTabsForCashier = ['reports', 'settings'];
-        hiddenTabsForCashier.forEach(tabName => {
-            const tabButton = document.querySelector(`.tabs [data-tab="${tabName}"]`);
-            if (tabButton) tabButton.classList.add('hidden-by-role');
-        });
-        
-        const activeTab = document.querySelector('.tab-btn.active');
-        if (activeTab && activeTab.classList.contains('hidden-by-role')) {
-            const firstVisibleTab = document.querySelector('.tab-btn:not(.hidden-by-role)');
-            if (firstVisibleTab) firstVisibleTab.click();
+       const wastageForm = document.getElementById('wastage-form');
+        if (wastageForm) {
+            wastageForm.style.display = 'none';
+            // Formun başlığını da gizleyebiliriz
+            const wastageHeader = wastageForm.previousElementSibling;
+            if (wastageHeader && wastageHeader.tagName === 'H3') {
+                wastageHeader.style.display = 'none';
+            }
+        }
+
+        // 2. "Yeni Veresiye Kaydı" formunu gizle.
+        const debtForm = document.getElementById('debt-form');
+        if (debtForm) {
+            debtForm.style.display = 'none';
+            const debtHeader = debtForm.previousElementSibling;
+            if (debtHeader && debtHeader.tagName === 'H3') {
+                debtHeader.style.display = 'none';
+            }
         }
     }
 }

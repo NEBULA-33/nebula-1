@@ -5,6 +5,7 @@ import { getCurrentStockInScans } from './stockManager.js';
 import { getCreditSaleCart } from './debtManager.js';
 import { getCurrentRole } from './authManager.js'; // Bu satır hataya neden oluyordu
 
+
 let uiElements = {};
 let chartInstance = null;
 
@@ -123,7 +124,23 @@ function renderCart() {
         vatRates[item.vat_rate] = (vatRates[item.vat_rate] || 0) + vatAmount;
         const cartItemDiv = document.createElement('div');
         cartItemDiv.className = 'cart-item';
-        cartItemDiv.innerHTML = `<span class="item-name">${item.name || ''}</span><span class="item-qty">${(item.quantity || 0).toFixed(item.is_weighable ? 3 : 2)}</span><span class="item-total">${itemTotal.toFixed(2)} TL</span><button class="delete-btn" onclick="window.app.removeFromCart(${item.cartId})">X</button>`;
+        const quantityControls = item.is_weighable 
+    ? `<span class="item-qty">${item.quantity.toFixed(3)} kg</span>`
+    : `<div class="quantity-controls">
+           <button class="quantity-btn" onclick="window.app.decreaseCartItemQuantity(${item.cartId})">-</button>
+           <span class="item-qty">${item.quantity}</span>
+           <button class="quantity-btn" onclick="window.app.increaseCartItemQuantity(${item.cartId})">+</button>
+       </div>`;
+
+cartItemDiv.innerHTML = `
+    <div class="cart-item-details">
+        <span class="item-name">${item.name || ''}</span>
+        <span class="item-total">${itemTotal.toFixed(2)} TL</span>
+    </div>
+    <div class="cart-item-controls">
+        ${quantityControls}
+        <button class="delete-btn" onclick="window.app.removeFromCart(${item.cartId})">X</button>
+    </div>`;
         uiElements.cartItemsContainer.appendChild(cartItemDiv);
     });
     const totalVat = Object.values(vatRates).reduce((a, b) => a + b, 0);
@@ -176,7 +193,7 @@ function renderDebts() {
                     ${phoneInfo}
                     ${addressInfo}
                     <div class="card-actions">
-                        <button class="secondary-btn" onclick="app.addTransactionToPerson(${person.id})">İşlem Yap</button>
+                        ${(getCurrentRole() === 'manager' || getCurrentRole() === 'yönetici') ? `<button class="secondary-btn" onclick="app.addTransactionToPerson(${person.id})">İşlem Yap</button>` : ''}
                         <button class="delete-btn manager-only" onclick="app.deletePerson(${person.id})">Kişiyi Sil</button>
                     </div>
                     <ul class="transaction-list">

@@ -29,29 +29,40 @@
     </div>
 
     <div class="main-container" style="display: none;">
-        <main class="content-panel">
-            <header class="panel-header">
-                <h1>İşletme Paneli</h1>
-                <button id="logout-btn" class="secondary-btn">Çıkış Yap</button>
-            </header>
-            <section id="sales-section">
-                <h2>Hızlı Satış</h2>
-                <form id="barcode-sell-form">
-                    <input type="text" id="barcode-scan-input" placeholder="Ürün barkodunu okutun veya PLU girin..." autofocus>
-                </form>
-                <div id="quick-add-container"></div>
-                <p id="sales-message" class="message"></p>
-            </section>
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="products">Ürün Yönetimi</button>
-                <button class="tab-btn" data-tab="stocks">Stok İşlemleri</button>
-                <button class="tab-btn" data-tab="butchering">Parçalama</button>
-                <button class="tab-btn" data-tab="debts-notes">Veresiye & Notlar</button>
-                <button class="tab-btn" data-tab="reports">Raporlar</button>
-                <button class="tab-btn" data-tab="settings">Ayarlar</button>
+
+        <aside class="side-navbar">
+            <div class="navbar-header">
+                <h3>İşletme Asistanı</h3>
             </div>
+            <nav class="nav-links">
+                <button class="nav-btn active" data-tab="sales">Satış Ekranı</button>
+                <button class="nav-btn" data-tab="products">Ürün Yönetimi</button>
+                <button class="nav-btn" data-tab="stocks">Stok İşlemleri</button>
+                <button class="nav-btn" data-tab="butchering">Parçalama</button>
+                <button class="nav-btn" data-tab="debts-notes">Veresiye & Notlar</button>
+                <button class="nav-btn manager-only" data-tab="reports">Raporlar</button>
+                <button class="nav-btn manager-only" data-tab="settings">Ayarlar</button>
+            </nav>
+            <div class="navbar-footer">
+                <button id="logout-btn" class="secondary-btn">Çıkış Yap</button>
+            </div>
+        </aside>
+
+        <main class="content-panel">
             <div class="tab-content-wrapper">
-                <div id="products" class="tab-content active">
+                
+                <div id="sales" class="tab-content active">
+                    <section id="sales-section">
+                        <h2>Hızlı Satış</h2>
+                        <form id="barcode-sell-form">
+                            <input type="text" id="barcode-scan-input" placeholder="Ürün barkodunu okutun veya PLU girin..." autofocus>
+                        </form>
+                        <div id="quick-add-container"></div>
+                        <p id="sales-message" class="message"></p>
+                    </section>
+                </div>
+                
+                <div id="products" class="tab-content">
                     <h3>Ürün Ekle/Düzenle</h3>
                     <form id="product-form" class="styled-form">
                         <input type="hidden" id="edit-product-id">
@@ -359,11 +370,7 @@
                     <select id="sales-channel-select"></select>
                 </div>
             </div>
-            <div class="summary-row grand-total">
-                <span>GENEL TOPLAM:</span>
-                <span id="grand-total">0.00 TL</span>
-            </div>
-
+            
             <div class="payment-section">
                 <div class="form-group">
                     <label for="amount-paid">Ödenen Tutar (TL):</label>
@@ -379,6 +386,7 @@
                 <button id="clear-cart-btn" class="delete-btn">Sepeti Temizle</button>
             </div>
         </aside>
+
     </div>
     <footer class="site-footer">
         <p>This software was developed with contributions from Nebula.</p>
