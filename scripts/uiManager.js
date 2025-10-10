@@ -1,7 +1,6 @@
 // scripts/uiManager.js
 
 import { state } from './dataManager.js';
-import { getCurrentStockInScans } from './stockManager.js';
 import { getCreditSaleCart } from './debtManager.js';
 import { getCurrentRole } from './authManager.js'; // Bu satır hataya neden oluyordu
 
@@ -37,6 +36,26 @@ export function renderReportTable(title, headers, rows, customContent = '') {
 
     uiElements.reportDisplayContent.innerHTML = customContent + tableHTML;
 }
+
+export function renderShopSwitcher() {
+    const shopSelect = document.getElementById('shop-select');
+    if (!shopSelect) return;
+
+    // Menüyü temizle
+    shopSelect.innerHTML = '';
+
+    // Yöneticinin erişebildiği dükkanları seçenek olarak ekle
+    state.accessibleShops.forEach(shop => {
+        const option = document.createElement('option');
+        option.value = shop.id;
+        option.textContent = shop.name;
+        if (state.currentShop && shop.id === state.currentShop.id) {
+            option.selected = true; // Aktif olan dükkanı seçili yap
+        }
+        shopSelect.appendChild(option);
+    });
+}
+
 
 export function renderReportChart(title, contentHTML, chartDataCallback, triggerId) {
     clearReportDisplay();
@@ -271,27 +290,88 @@ function renderSalesChannelManagementList() {
     ).join('') + '</ul>';
 }
 
+// uiManager.js dosyasındaki mevcut renderStockInList fonksiyonunu silip yerine bunu yapıştırın.
+
+// uiManager.js içindeki ESKİ renderStockInList fonksiyonunu SİLİP, YERİNE BU KODU YAPIŞTIR.
+
 function renderStockInList() {
-    if (!uiElements.stockInListContainer) return;
-    const scans = getCurrentStockInScans();
-    uiElements.confirmStockInBtn.disabled = scans.length === 0;
+    const container = document.getElementById('stock-in-list-container');
+    if (!container) return;
+
+    const scans = state.currentStockInScans || [];
+    const confirmBtn = document.getElementById('confirm-stock-in-btn');
+    if (confirmBtn) confirmBtn.disabled = scans.length === 0;
+
     if (scans.length === 0) {
-        uiElements.stockInListContainer.innerHTML = ''; return;
+        container.innerHTML = '<p style="text-align: center; color: #666;">Liste boş. Eklemek için ürün okutun.</p>';
+        return;
     }
-    const summary = scans.reduce((acc, scan) => {
-        acc[scan.id] = acc[scan.id] || { name: scan.name, totalQuantity: 0, count: 0 };
+
+    // 1. ADIM: Okutulmuş ürünleri ürün ID'sine göre gruplayalım
+    const groups = scans.reduce((acc, scan) => {
+        if (!acc[scan.id]) {
+            acc[scan.id] = {
+                productInfo: { id: scan.id, name: scan.name, isWeighable: scan.isWeighable },
+                scans: [],
+                totalQuantity: 0
+            };
+        }
+        acc[scan.id].scans.push(scan);
         acc[scan.id].totalQuantity += scan.quantity;
-        acc[scan.id].count++;
         return acc;
     }, {});
-    let tableHTML = '<table><thead><tr><th>Ürün</th><th>Miktar</th></tr></thead><tbody>';
-    for (const id in summary) {
-        tableHTML += `<tr><td>${summary[id].name}</td><td>${summary[id].totalQuantity.toFixed(3)} (${summary[id].count} okutma)</td></tr>`;
-    }
-    tableHTML += '</tbody></table>';
-    uiElements.stockInListContainer.innerHTML = tableHTML;
-}
 
+    // 2. ADIM: Her bir grup için HTML oluşturalım
+    container.innerHTML = Object.values(groups).map(group => {
+        const isExpanded = state.expandedStockInGroups.includes(group.productInfo.id);
+        const unit = group.productInfo.isWeighable ? 'kg' : 'Adet';
+
+        // 3. ADIM: Eğer grup açıksa, içindeki tek tek ürünleri listeleyelim
+        let detailsHtml = '';
+        if (isExpanded) {
+            detailsHtml = group.scans.map(item => {
+                const quantityText = item.isWeighable ? item.quantity.toFixed(3) + ' kg' : Math.round(item.quantity);
+                const quantityControls = !item.isWeighable ? `
+                    <button class="quantity-btn" onclick="app.decreaseStockInQuantity(${item.timestamp})">-</button>
+                    <span class="item-qty">${quantityText}</span>
+                    <button class="quantity-btn" onclick="app.increaseStockInQuantity(${item.timestamp})">+</button>
+                ` : `<span class="item-qty">${quantityText}</span>`;
+
+                return `
+                    <div class="cart-item sub-item" style="background-color: #f9f9f9; border-top: 1px solid #eee;">
+                        <div class="cart-item-details" style="padding-left: 20px;">
+                           <span class="item-name" style="font-size: 0.9em;">- Tek Okutma</span>
+                        </div>
+                        <div class="cart-item-controls">
+                            ${quantityControls}
+                            <button class="delete-btn" onclick="app.removeFromStockInList(${item.timestamp})">X</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 4. ADIM: Ana grup satırını ve (varsa) detayları birleştirelim
+        return `
+            <div class="stock-group" style="border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; overflow: hidden;">
+                <div class="cart-item group-header" style="background-color: #f0f2f5;">
+                    <div class="cart-item-details">
+                        <span class="item-name" style="font-weight: bold;">${group.productInfo.name}</span>
+                        <span class="item-total">Toplam: ${group.totalQuantity.toFixed(group.productInfo.isWeighable ? 3 : 0)} ${unit}</span>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="secondary-btn" onclick="app.toggleStockInGroup(${group.productInfo.id})">
+                            ${isExpanded ? 'Kapat' : 'Detay'}
+                        </button>
+                    </div>
+                </div>
+                <div class="group-details">
+                    ${detailsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
 function renderAccessLog() {
     if (!uiElements.accessLogContainer) return;
     if (getCurrentRole() !== 'manager' || !state.accessLog || state.accessLog.length === 0) {
@@ -369,6 +449,7 @@ export function renderAll() {
         renderAccessLog();
         renderDebtSale();
         renderAuditLog();
+        renderShopSwitcher();
     } catch (error) {
         console.error("Arayüz çizimi sırasında bir hata oluştu:", error);
     }

@@ -19,12 +19,17 @@ export const state = {
     productUpdateHistory: [],
     wastageReasons: [],
     salesChannels: [],
+    expandedStockInGroups: [],
 
     // Çoklu dükkan yapısı için yeni state'ler
     currentUser: null,
     currentShop: null,
-    userProfile: null
+    userProfile: null,
+    accessibleShops: [], // Kullanıcının erişebildiği tüm dükkanlar
+    currentShop: null      // O an aktif olan, seçili dükkan
 };
+
+// dataManager.js içindeki loadInitialData fonksiyonunun DÜZELTİLMİŞ HALİ
 
 export async function loadInitialData() {
     console.log("Veriler Supabase'den yükleniyor...");
@@ -37,12 +42,15 @@ export async function loadInitialData() {
         }
         state.currentUser = user;
 
-        // 2. Adım: Kullanıcının profilini ve dükkan bilgilerini çek
+        // 2. Adım: Kullanıcının profilini ve YENİ YÖNTEMLE dükkan bilgilerini çek
+        // Hatanın olduğu kısım burasıydı, şimdi düzeltildi.
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select(`
                 *,
-                shops ( * ) 
+                profile_shops (
+                    shops ( * )
+                )
             `)
             .eq('id', user.id)
             .single();
@@ -52,13 +60,26 @@ export async function loadInitialData() {
             alert("Kullanıcı profili bulunamadı! Lütfen yönetici ile görüşün.");
             return;
         }
-
+        
         state.userProfile = profileData;
-        state.currentShop = profileData.shops;
+        
+        // Gelen iç içe veriden sadece dükkanlar listesini ayıklayalım
+        state.accessibleShops = profileData.profile_shops.map(ps => ps.shops);
+
+        if (state.accessibleShops.length === 0) {
+             alert("Hesabınıza atanmış bir dükkan bulunamadı!");
+             return;
+        }
+        
+        // Eğer daha önce bir dükkan seçilmemişse, ilk dükkanı aktif dükkan yap.
+        if (!state.currentShop) {
+            state.currentShop = state.accessibleShops[0];
+        }
+
         const currentShopId = state.currentShop.id;
         console.log(`Aktif Dükkan: ${state.currentShop.name} (ID: ${currentShopId})`);
 
-        // 3. Adım: Sadece o dükkana ait verileri ve genel ayarları çek
+        // Fonksiyonun geri kalanı aynı...
         const [
             { data: productsData },
             { data: recipesData },
@@ -69,13 +90,12 @@ export async function loadInitialData() {
         ] = await Promise.all([
             supabase.from('products').select('*').eq('shop_id', currentShopId),
             supabase.from('butchering_recipes').select('*').eq('shop_id', currentShopId),
-            supabase.from('debt_persons').select('*, debt_transactions!inner(*)').eq('shop_id', currentShopId),
+            supabase.from('debt_persons').select('*, debt_transactions(*)').eq('shop_id', currentShopId),
             supabase.from('personal_notes').select('*').eq('shop_id', currentShopId),
-            supabase.from('sales_channels').select('*'), // Genel ayar
-            supabase.from('wastage_reasons').select('*')  // Genel ayar
+            supabase.from('sales_channels').select('*'),
+            supabase.from('wastage_reasons').select('*')
         ]);
 
-        // 4. Adım: Gelen verileri state objemize aktar
         state.products = productsData || [];
         state.butcheringRecipes = recipesData || [];
         state.debts = debtsData || [];

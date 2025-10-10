@@ -34,6 +34,12 @@
             <div class="navbar-header">
                 <h3>İşletme Asistanı</h3>
             </div>
+
+<div id="shop-switcher-container" class="manager-only" style="padding: 0 20px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                <label for="shop-select" style="color: white; font-size: 0.9em; display: block; margin-bottom: 8px;">Aktif Dükkan:</label>
+                <select id="shop-select" style="width: 100%; padding: 8px; border-radius: 4px; border: none;"></select>
+            </div>
+           
             <nav class="nav-links">
                 <button class="nav-btn active" data-tab="sales">Satış Ekranı</button>
                 <button class="nav-btn" data-tab="products">Ürün Yönetimi</button>
@@ -97,6 +103,13 @@
                         <div id="barcode-section">
                             <label for="product-barcode">Ürün Barkodu:</label>
                             <input type="text" id="product-barcode">
+                        </div>
+                        <hr>
+                        <div id="packaging-section">
+                            <label>Koli/Kutu Barkodları (ve İçerdikleri Miktar):</label>
+                            <div id="packaging-options-container">
+                                </div>
+                            <button type="button" id="add-packaging-btn" class="secondary-btn">+ Koli/Kutu Ekle</button>
                         </div>
                         <div class="form-row">
                             <div class="form-group">

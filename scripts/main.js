@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         newChannelInput: document.getElementById('new-channel-input'),
         channelListContainer: document.getElementById('channel-list-container'),
         sideNavbar: document.querySelector('.side-navbar'),
+         shopSelect: document.getElementById('shop-select')
         
     };
 
@@ -160,6 +161,25 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
 });
 
+if (uiElements.shopSelect) {
+            uiElements.shopSelect.addEventListener('change', async (e) => {
+                const selectedShopId = parseInt(e.target.value);
+                const selectedShop = state.accessibleShops.find(shop => shop.id === selectedShopId);
+                
+                if (selectedShop) {
+                    // 1. Aktif dükkanı state'de güncelle
+                    state.currentShop = selectedShop;
+                    
+                    // 2. Yeni seçilen dükkana ait tüm verileri yeniden yükle
+                    await loadInitialData(); 
+                    
+                    // 3. Tüm arayüzü yeni verilerle yeniden çiz
+                    renderAll(); 
+                }
+            });
+        }
+
+        
         if (uiElements.subTabsContainer) {
             uiElements.subTabsContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('.sub-tab-btn');

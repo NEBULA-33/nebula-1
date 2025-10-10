@@ -27,6 +27,9 @@ function resetProductForm() {
     if (uiElements.pluCodesContainer) uiElements.pluCodesContainer.innerHTML = '';
     if (uiElements.productSubmitBtn) uiElements.productSubmitBtn.textContent = 'Ürünü Ekle';
     if (uiElements.cancelEditBtn) uiElements.cancelEditBtn.style.display = 'none';
+    if (document.getElementById('packaging-options-container')) {
+    document.getElementById('packaging-options-container').innerHTML = '';
+}
 
     const fieldsToToggle = [
         uiElements.purchasePriceInput,
@@ -57,13 +60,41 @@ function toggleProductFields() {
     }
 }
 
-function addPluInput(value = '') {
+function addPluInput(plu = '', multiplier = '') {
     if (!uiElements.pluCodesContainer) return;
     const group = document.createElement('div');
-    group.className = 'plu-input-group';
-    group.innerHTML = `<input type="text" class="plu-code-input" placeholder="5 haneli PLU kodu" value="${value}"><button type="button" class="delete-btn">Sil</button>`;
+    group.className = 'form-row plu-input-group';
+    group.innerHTML = `
+        <div class="form-group" style="flex: 2;">
+            <input type="text" class="plu-code-input" placeholder="5 haneli PLU" value="${plu}">
+        </div>
+        <div class="form-group" style="flex: 1;">
+            <input type="number" class="plu-multiplier-input" placeholder="Çarpan (Kg/Adet)" value="${multiplier}" step="0.001">
+        </div>
+        <button type="button" class="delete-btn">Sil</button>
+    `;
     group.querySelector('.delete-btn').onclick = () => group.remove();
     uiElements.pluCodesContainer.appendChild(group);
+}
+// productManager.js dosyasında, addPluInput fonksiyonundan sonra EKLE
+
+function addPackagingInput(barcode = '', quantity = '') {
+    if (!uiElements.packagingOptionsContainer) {
+        uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
+    }
+    const group = document.createElement('div');
+    group.className = 'form-row packaging-input-group';
+    group.innerHTML = `
+        <div class="form-group" style="flex: 2;">
+            <input type="text" class="packaging-barcode-input" placeholder="Koli Barkodu" value="${barcode}">
+        </div>
+        <div class="form-group" style="flex: 1;">
+            <input type="number" class="packaging-quantity-input" placeholder="Miktar" value="${quantity}">
+        </div>
+        <button type="button" class="delete-btn">Sil</button>
+    `;
+    group.querySelector('.delete-btn').onclick = () => group.remove();
+    uiElements.packagingOptionsContainer.appendChild(group);
 }
 
 // "Aynı ürün varsa stoğu güncelle" mantığı eklenmiş tam fonksiyon
@@ -113,9 +144,25 @@ async function handleProductFormSubmit(e) {
     }
 
     // --- Eğer ürün bulunamadıysa VEYA DÜZENLEME MODUNDAYSAK, normal ekleme/güncelleme işlemi devam eder ---
-
-    const pluCodes = Array.from(uiElements.pluCodesContainer.querySelectorAll('.plu-code-input')).map(input => input.value.trim()).filter(Boolean);
+   const packagingOptions = [];
+    if (document.getElementById('packaging-options-container')) {
+        document.querySelectorAll('.packaging-input-group').forEach(group => {
+            const barcode = group.querySelector('.packaging-barcode-input').value.trim();
+            const quantity = parseInt(group.querySelector('.packaging-quantity-input').value);
+            if (barcode && quantity > 0) {
+                packagingOptions.push({ barcode, quantity });
+            }
+        });
+    }
     
+const pluCodes = [];
+uiElements.pluCodesContainer.querySelectorAll('.plu-input-group').forEach(group => {
+    const plu = group.querySelector('.plu-code-input').value.trim();
+    const multiplier = parseFloat(group.querySelector('.plu-multiplier-input').value);
+    if (plu && multiplier > 0) {
+        pluCodes.push({ plu, multiplier });
+    }
+});
     const productData = {
         name: productName,
         selling_price: sellingPrice,
@@ -125,6 +172,7 @@ async function handleProductFormSubmit(e) {
         plu_codes: pluCodes,
         barcode: uiElements.productBarcodeInput.value.trim(),
         vat_rate: parseFloat(uiElements.productVatRateSelect.value),
+          packaging_options: packagingOptions,
         purchase_price: parseFloat(uiElements.purchasePriceInput.value),
         shop_id: currentShopId
     };
@@ -172,10 +220,19 @@ function editProduct(id) {
     uiElements.stockQuantityInput.value = product.stock;
     
     if (product.is_weighable && product.plu_codes) {
-        product.plu_codes.forEach(code => addPluInput(code));
-    }
+    product.plu_codes.forEach(codeObj => addPluInput(codeObj.plu, codeObj.multiplier));
+}
     
     toggleProductFields();
+    if (!uiElements.packagingOptionsContainer) {
+    uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
+}
+// Önceki koli girdilerini temizle
+uiElements.packagingOptionsContainer.innerHTML = ''; 
+// Kayıtlı koli seçeneklerini forma ekle
+if (product.packaging_options) {
+    product.packaging_options.forEach(opt => addPackagingInput(opt.barcode, opt.quantity));
+}
 
   const role = getCurrentRole();
     const isManager = (role === 'manager' || role === 'yönetici'); // Rol adını kontrol edelim
@@ -215,6 +272,11 @@ export function initializeProductManager(elements) {
     window.app = window.app || {};
     window.app.editProduct = editProduct;
     window.app.deleteProduct = deleteProduct;
+    uiElements.addPackagingBtn = document.getElementById('add-packaging-btn');
+uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
+if (uiElements.addPackagingBtn) {
+    uiElements.addPackagingBtn.addEventListener('click', () => addPackagingInput());
+}
     if (uiElements.productForm) uiElements.productForm.addEventListener('submit', handleProductFormSubmit);
     if (uiElements.isWeighableCheckbox) uiElements.isWeighableCheckbox.addEventListener('change', toggleProductFields);
     if (uiElements.addPluBtn) uiElements.addPluBtn.addEventListener('click', () => addPluInput());
