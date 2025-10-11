@@ -3,6 +3,7 @@
 import { state } from './dataManager.js';
 import { getCreditSaleCart } from './debtManager.js';
 import { getCurrentRole } from './authManager.js'; // Bu satır hataya neden oluyordu
+import { getPurchaseCart, getSuppliers } from './purchaseManager.js';
 
 
 let uiElements = {};
@@ -413,6 +414,67 @@ function renderAuditLog() {
     logHTML += '</ul>';
     uiElements.auditLogContainer.innerHTML = logHTML;
 }
+function renderPurchaseInvoiceCart() {
+    const container = document.getElementById('purchase-cart-container');
+    const productSelect = document.getElementById('invoice-product-select');
+    if (!container || !productSelect) return;
+
+    // Ürün seçme menüsünü doldur
+    productSelect.innerHTML = '<option value="">-- Ürün Seç veya Okut --</option>' + 
+        state.products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    const cart = getPurchaseCart();
+    if (cart.length === 0) {
+        container.innerHTML = '<p>Faturaya ürün ekleyin...</p>';
+        return;
+    }
+
+    container.innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Miktar</th>
+                    <th>Alış Fiyatı (Birim)</th>
+                    <th>Toplam</th>
+                    <th>Sil</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${cart.map(item => `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td><input type="number" class="table-input" value="${item.quantity}" onchange="window.app.updatePurchaseCartItem(${item.id}, 'quantity', this.valueAsNumber)"></td>
+                        <td><input type="number" class="table-input" value="${item.purchase_price.toFixed(2)}" step="0.01" onchange="window.app.updatePurchaseCartItem(${item.id}, 'purchase_price', this.valueAsNumber)"> TL</td>
+                        <td>${(item.quantity * item.purchase_price).toFixed(2)} TL</td>
+                        <td><button class="delete-btn" onclick="window.app.removePurchaseCartItem(${item.id})">X</button></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// YENİ FONKSİYON 2: Tedarikçi Listesini Çizer
+function renderSuppliers() {
+    const container = document.getElementById('supplier-list-container');
+    if (!container) return;
+    const suppliers = getSuppliers();
+    if (suppliers.length === 0) {
+        container.innerHTML = '<p>Kayıtlı tedarikçi bulunmuyor.</p>';
+        return;
+    }
+    container.innerHTML = '<ul>' + suppliers.map(s => `<li>${s.name} (${s.phone || 'Telefon Yok'})</li>`).join('') + '</ul>';
+}
+
+// YENİ FONKSİYON 3: Fatura Ekranındaki Tedarikçi Menüsünü Doldurur
+function renderSupplierDropdown() {
+    const select = document.getElementById('invoice-supplier-select');
+    if (!select) return;
+    const suppliers = getSuppliers();
+    select.innerHTML = '<option value="">-- Tedarikçi Seçin --</option>' +
+        suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
 
 function renderDebtSale() {
     if (!uiElements.debtSaleContainer || uiElements.debtSaleContainer.style.display === 'none') return;
@@ -449,7 +511,11 @@ export function renderAll() {
         renderAccessLog();
         renderDebtSale();
         renderAuditLog();
-        renderShopSwitcher();
+        renderPurchaseInvoiceCart();
+renderSuppliers();
+renderSupplierDropdown();
+
+renderShopSwitcher();
     } catch (error) {
         console.error("Arayüz çizimi sırasında bir hata oluştu:", error);
     }

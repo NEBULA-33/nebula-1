@@ -8,6 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/index.global.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/main.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/locales/tr.global.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -41,14 +44,15 @@
             </div>
            
             <nav class="nav-links">
-                <button class="nav-btn active" data-tab="sales">Satış Ekranı</button>
-                <button class="nav-btn" data-tab="products">Ürün Yönetimi</button>
-                <button class="nav-btn" data-tab="stocks">Stok İşlemleri</button>
-                <button class="nav-btn" data-tab="butchering">Parçalama</button>
-                <button class="nav-btn" data-tab="debts-notes">Veresiye & Notlar</button>
-                <button class="nav-btn manager-only" data-tab="reports">Raporlar</button>
-                <button class="nav-btn manager-only" data-tab="settings">Ayarlar</button>
-            </nav>
+    <button class="nav-btn active" data-tab="sales">Satış Ekranı</button>
+    <button class="nav-btn" data-tab="products">Ürün Yönetimi</button>
+    <button class="nav-btn" data-tab="stocks">Stok İşlemleri</button>
+    <button class="nav-btn manager-only" data-tab="purchases">Alım İşlemleri</button> 
+    <button class="nav-btn" data-tab="butchering">Parçalama</button>
+    <button class="nav-btn" data-tab="debts-notes">Veresiye & Notlar</button>
+    <button class="nav-btn manager-only" data-tab="reports">Raporlar</button>
+    <button class="nav-btn manager-only" data-tab="settings">Ayarlar</button>
+</nav>
             <div class="navbar-footer">
                 <button id="logout-btn" class="secondary-btn">Çıkış Yap</button>
             </div>
@@ -137,15 +141,8 @@
 
                 <div id="stocks" class="tab-content">
                     <div class="stock-sections">
-                        <div class="stock-section">
-                            <h3>Stok Girişi (Barkod ile)</h3>
-                            <form id="stock-in-form">
-                                <input type="text" id="stock-in-barcode-scan-input" placeholder="Giriş yapılacak ürün barkodunu okutun...">
-                            </form>
-                             <div id="stock-in-list-container"></div>
-                             <button id="confirm-stock-in-btn" disabled>Girişleri Onayla ve Stoğa Ekle</button>
-                             <p id="stock-in-message" class="message"></p>
-                        </div>
+                    
+                        
                         <div class="stock-section">
                             <h3>Stok Düşümü (Fire / Zayiat)</h3>
                             <form id="wastage-form">
@@ -168,6 +165,72 @@
                         </div>
                     </div>
                 </div>
+                <div id="purchases" class="tab-content">
+    <div class="sub-tabs">
+        <button class="sub-tab-btn active" data-subtab="new-invoice">Yeni Fatura Girişi</button>
+        <button class="sub-tab-btn" data-subtab="suppliers">Tedarikçi Yönetimi</button>
+    </div>
+
+    <div id="new-invoice" class="sub-tab-content active">
+    <h3>Yeni Alım Faturası Girişi ve Stok Güncelleme</h3>
+    <div class="content-columns">
+        <div class="column">
+            <form id="purchaseInvoiceForm" class="styled-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="invoice-supplier-select">Tedarikçi Seçin:</label>
+                        <select id="invoice-supplier-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-date-input">Fatura Tarihi:</label>
+                        <input type="date" id="invoice-date-input" required>
+                    </div>
+                </div>
+            </form>
+            <hr>
+
+            <form id="purchase-barcode-form">
+                <label for="purchase-barcode-scan-input">Barkod Okutarak Ekle:</label>
+                <input type="text" id="purchase-barcode-scan-input" placeholder="Ürün barkodunu okutun..." style="margin-bottom: 15px;">
+            </form>
+            <label>Veya Listeden Seçerek Ekle:</label>
+            <select id="invoice-product-select" onchange="window.app.addProductToPurchaseCart(this.value)">
+                </select>
+        </div>
+        <div class="column">
+            <h4>Fatura İçeriği</h4>
+            <div id="purchase-cart-container">
+                <p>Faturaya ürün ekleyin...</p>
+            </div>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button id="confirm-purchase-btn">Faturayı Kaydet ve Stoklara Ekle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div id="suppliers" class="sub-tab-content">
+        <div class="content-columns">
+            <div class="column">
+                <h3>Yeni Tedarikçi Ekle</h3>
+                <form id="supplier-form" class="styled-form">
+                    <label for="supplier-name-input">Tedarikçi Firma Adı:</label>
+                    <input type="text" id="supplier-name-input" required>
+                    <label for="supplier-contact-input">İlgili Kişi:</label>
+                    <input type="text" id="supplier-contact-input">
+                    <label for="supplier-phone-input">Telefon:</label>
+                    <input type="text" id="supplier-phone-input">
+                    <button type="submit">Tedarikçiyi Kaydet</button>
+                    <p id="supplier-message" class="message"></p>
+                </form>
+            </div>
+            <div class="column">
+                <h3>Kayıtlı Tedarikçiler</h3>
+                <div id="supplier-list-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div id="butchering" class="tab-content">
                     <div class="content-columns">
@@ -313,6 +376,7 @@
                             <button class="report-card" data-report-id="parcalamaVerim"><h4>Parçalama Verimlilik Raporu</h4><p>Parçalama işlemlerinin kârlılığını ölçün.</p></button>
                             <button class="report-card" data-report-id="birlikteSatilan"><h4>Birlikte Satılan Ürünler</h4><p>Çapraz satış fırsatları için müşteri sepetlerini analiz edin.</p></button>
                             <button class="report-card" data-report-id="islemKayitlari"><h4>Tüm İşlem Kayıtları</h4><p>Sistemdeki tüm operasyonel kayıtların detaylı listesi.</p></button>
+                           <button class="report-card" data-report-id="activityCalendar">  <h4>📅 Faaliyet Takvimi</h4><p>Satış ve alış işlemlerinizi takvim üzerinde görsel olarak takip edin.</p> </button>
                         </div>
                     </div>
                     <div id="report-display" style="display: none;">

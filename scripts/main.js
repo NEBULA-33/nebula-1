@@ -9,6 +9,7 @@ import { initializeReportsManager } from './reportsManager.js';
 import { initializeButcheringManager } from './butcheringManager.js';
 import { initializeNotesManager } from './notesManager.js';
 import { initializeSettingsManager } from './settingsManager.js';
+import { initializePurchaseManager } from './purchaseManager.js'; 
 
 document.addEventListener('DOMContentLoaded', () => {
     // Bu obje, HTML'deki tüm önemli elementleri ID'leri ile bulur ve diğer scriptlerin kullanımına sunar.
@@ -126,8 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
         newChannelInput: document.getElementById('new-channel-input'),
         channelListContainer: document.getElementById('channel-list-container'),
         sideNavbar: document.querySelector('.side-navbar'),
-         shopSelect: document.getElementById('shop-select')
+         shopSelect: document.getElementById('shop-select'),
+         supplierForm: document.getElementById('supplier-form'),
+supplierNameInput: document.getElementById('supplier-name-input'),
+supplierContactInput: document.getElementById('supplier-contact-input'),
+supplierPhoneInput: document.getElementById('supplier-phone-input'),
+supplierMessage: document.getElementById('supplier-message'),
+purchaseInvoiceForm: document.getElementById('purchaseInvoiceForm'),
+invoiceSupplierSelect: document.getElementById('invoice-supplier-select'),
+invoiceDateInput: document.getElementById('invoice-date-input'),
+confirmPurchaseBtn: document.getElementById('confirm-purchase-btn'),
         
+        // YENİ EKLENEN SATIRLAR
+        purchaseBarcodeForm: document.getElementById('purchase-barcode-form'),
+        purchaseBarcodeScanInput: document.getElementById('purchase-barcode-scan-input')
     };
 
     async function startApp() {
@@ -142,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeButcheringManager(uiElements);
         initializeNotesManager(uiElements);
         initializeSettingsManager(uiElements);
+        initializePurchaseManager(uiElements);
 
         uiElements.sideNavbar.addEventListener('click', (e) => { 
     // '.tab-btn' yerine yeni buton sınıfımız olan '.nav-btn'i arıyoruz

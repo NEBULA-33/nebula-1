@@ -3,6 +3,7 @@ import { state } from './dataManager.js';
 import { renderAll } from './uiManager.js';
 import { supabase } from './supabaseClient.js';
 import { logAction } from './logManager.js';
+import { findProductByCode } from './stockManager.js';
 
 let uiElements = {};
 
@@ -136,30 +137,29 @@ export async function completeSale() {
     alert(`Satış başarıyla tamamlandı ve '${selectedChannel}' kanalına kaydedildi!`);
 }
 
+// salesManager.js içindeki ESKİ handleBarcodeSell fonksiyonunu SİLİP, YERİNE BUNU YAPIŞTIRIN
+
 function handleBarcodeSell(e) {
     e.preventDefault();
     const scannedCode = uiElements.barcodeScanInput.value.trim();
     if (!scannedCode) return;
-    let productToSell = null;
-    let quantity = 1;
-    if (scannedCode.startsWith('28') && scannedCode.length >= 12) {
-        const pluCode = scannedCode.substring(2, 7);
-        const weightInGrams = parseInt(scannedCode.substring(7, 12));
-        if (!isNaN(weightInGrams)) {
-            productToSell = state.products.find(p => p.is_weighable && p.plu_codes && p.plu_codes.includes(pluCode));
-            if (productToSell) quantity = weightInGrams / 1000.0;
-        }
-    } else {
-        productToSell = state.products.find(p => !p.is_weighable && p.barcode === scannedCode);
-    }
-    if (productToSell) {
-        addToCart(productToSell, quantity);
+
+    // Bütün akıllı arama mantığını (terazi, koli, çarpanlı PLU, standart barkod)
+    // stockManager'daki merkezi fonksiyona devrediyoruz.
+    const result = findProductByCode(scannedCode);
+
+    if (result && result.product) {
+        // Fonksiyondan dönen doğru ürün ve doğru miktar (çarpan uygulanmış hali) ile sepete ekle
+        addToCart(result.product, result.quantity);
     } else {
         alert('Bu barkoda sahip bir ürün bulunamadı!');
     }
+    
     uiElements.barcodeScanInput.value = '';
     uiElements.barcodeScanInput.focus();
 }
+
+
 
 export function initializeSalesManager(elements) {
     uiElements = elements;

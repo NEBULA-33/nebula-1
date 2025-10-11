@@ -23,7 +23,7 @@ async function refreshData() {
 
 // stockManager.js içindeki findProductByCode fonksiyonunun İLK if bloğunu bununla DEĞİŞTİR
 
-function findProductByCode(code) {
+export function findProductByCode(code) {
     // Tartılabilir ürünleri iki farklı şekilde kontrol edeceğiz
     if (code.startsWith('28') && code.length >= 12) { // Standart Terazi Barkodu
         const pluCode = code.substring(2, 7);

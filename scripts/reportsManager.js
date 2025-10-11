@@ -527,6 +527,88 @@ async function generateStokDegeriRaporu() {
 
     renderReportTable('Mevcut Stok Değeri', headers, rows, content);
 }
+async function generateActivityCalendar() {
+    activeReportGenerator = generateActivityCalendar;
+    
+    const contentHTML = `<div id="calendar-container" style="height: 75vh;"></div>`;
+    renderReportTable('İşletme Faaliyet Takvimi', [], [], contentHTML);
+
+    const calendarEl = document.getElementById('calendar-container');
+    if (!calendarEl) return;
+
+    try {
+        const selectedShopId = document.getElementById('report-shop-select').value;
+        
+        const queries = [
+            supabase.from('sales').select('created_at, total_revenue').gt('quantity', 0),
+            supabase.from('purchase_invoices').select('invoice_date, total_amount'),
+            supabase.from('debt_transactions').select('created_at, amount').lt('amount', 0),
+            supabase.from('wastage_history').select('created_at, cost')
+        ];
+
+        if (selectedShopId !== 'all') {
+            for (let i = 0; i < queries.length; i++) {
+                queries[i] = queries[i].eq('shop_id', selectedShopId);
+            }
+        }
+
+        const results = await Promise.all(queries);
+        const [salesResult, purchaseResult, debtResult, wastageResult] = results;
+        
+        if (salesResult.error) throw new Error(`Satış verileri çekilemedi: ${salesResult.error.message}`);
+        if (purchaseResult.error) throw new Error(`Alım faturası verileri çekilemedi: ${purchaseResult.error.message}`);
+        if (debtResult.error) throw new Error(`Veresiye işlem verileri çekilemedi: ${debtResult.error.message}`);
+        if (wastageResult.error) throw new Error(`Fire geçmişi verileri çekilemedi: ${wastageResult.error.message}`);
+
+        const salesData = salesResult.data;
+        const purchaseData = purchaseResult.data;
+        const debtData = debtResult.data;
+        const wastageData = wastageResult.data;
+
+        const dailyData = {};
+
+        const processData = (data, dateField, valueField, targetKey) => {
+            (data || []).forEach(item => {
+                const day = item[dateField].split('T')[0];
+                if (!dailyData[day]) dailyData[day] = { sales: 0, purchases: 0, collections: 0, wastage: 0 };
+                dailyData[day][targetKey] += (targetKey === 'collections') ? Math.abs(item[valueField]) : item[valueField];
+            });
+        };
+        
+        processData(salesData, 'created_at', 'total_revenue', 'sales');
+        processData(purchaseData, 'invoice_date', 'total_amount', 'purchases');
+        processData(debtData, 'created_at', 'amount', 'collections');
+        processData(wastageData, 'created_at', 'cost', 'wastage');
+        
+        const calendarEvents = Object.keys(dailyData).map(day => {
+            const data = dailyData[day];
+            const salesHtml = data.sales > 0 ? `<div class="fc-event-tag" style="background-color: #28a745;">✅ Ciro: ${data.sales.toFixed(0)} TL</div>` : '';
+            const purchasesHtml = data.purchases > 0 ? `<div class="fc-event-tag" style="background-color: #dc3545;">🔴 Alım: ${data.purchases.toFixed(0)} TL</div>` : '';
+            const collectionsHtml = data.collections > 0 ? `<div class="fc-event-tag" style="background-color: #007bff;">💰 Tahsilat: ${data.collections.toFixed(0)} TL</div>` : '';
+            const wastageHtml = data.wastage > 0 ? `<div class="fc-event-tag" style="background-color: #ffc107; color: #333;">🗑️ Fire: ${data.wastage.toFixed(0)} TL</div>` : '';
+            return {
+                start: day,
+                allDay: true,
+                title: 'Gün Özeti', 
+                eventContent: { html: `<div class="daily-summary">${salesHtml}${purchasesHtml}${collectionsHtml}${wastageHtml}</div>` },
+                borderColor: 'transparent',
+                backgroundColor: 'transparent'
+            };
+        });
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'tr',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth' },
+            initialView: 'dayGridMonth',
+            events: calendarEvents,
+            dayMaxEvents: true,
+        });
+        calendar.render();
+    } catch (error) {
+        calendarEl.innerHTML = `<p style="color: red; font-weight: bold; padding: 20px;">Takvim yüklenirken bir hata oluştu:<br><br>${error.message}</p>`;
+    }
+}
+
 // --- ANA YÖNETİM FONKSİYONLARI (İSKELET) ---
 
 function handleReportCardClick(e) {
@@ -558,6 +640,7 @@ function handleReportCardClick(e) {
         'ortalamaSepet': generateOrtalamaSepet,
         'kanalSatis': generateKanalSatisRaporu,
         'parcalamaVerim': generateParcalamaVerimRaporu,
+        'activityCalendar': generateActivityCalendar,
         // Diğer tüm rapor id'leri buraya eklenecek
     };
 

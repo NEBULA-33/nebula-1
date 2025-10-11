@@ -370,3 +370,39 @@ hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
     position: relative;
     z-index: 2;
 }
+/* style.css dosyasının en sonuna ekleyin */
+
+/* Takvimdeki günlük özet container'ı */
+.daily-summary {
+    padding: 2px;
+    font-size: 0.8em;
+    line-height: 1.4;
+}
+
+/* Her bir renkli etiket (Ciro, Alım vb.) */
+.fc-event-tag {
+    color: white;
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Takvim event'lerinin arkaplanını ve kenarlığını sıfırla */
+.fc-daygrid-event {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Event içeriğinin tüm alanı kullanmasını sağla */
+.fc-event-main-frame {
+    width: 100%;
+}
+.fc-event-title-container {
+    width: 100%;
+}
+.fc-daygrid-event-harness {
+    width: 100%;
+}
