@@ -24,17 +24,16 @@ async function refreshData() {
 // stockManager.js içindeki findProductByCode fonksiyonunun İLK if bloğunu bununla DEĞİŞTİR
 
 export function findProductByCode(code) {
-    // 1. TERAZİ BARKODU KONTROLÜ (Örn: 28 01050 00550 1)
+    // 1. Durum: Terazi Barkodu (27, 28, 29 ile başlayan)
     if ((code.startsWith('27') || code.startsWith('28') || code.startsWith('29')) && code.length >= 12) { 
-        const pluCode = code.substring(2, 7); // Barkodun içinden 01050'yi çek
-        const weightPart = code.substring(7, 12); // Ağırlığı çek
+        const pluCode = code.substring(2, 7); 
+        const weightPart = code.substring(7, 12); 
         const weightInGrams = parseInt(weightPart);
 
-        // Şimdi elimizdeki kısa "pluCode" ile ürünleri ara
         const product = state.products.find(p => {
             if (!p.is_weighable || !p.plu_codes) return false;
             
-            // Ürünün kodları arasında bu kısa kod var mı?
+            // HEM String ("101") HEM Obje ({plu: "101"}) kontrolü
             return p.plu_codes.some(c => {
                 const dbCode = (typeof c === 'string') ? c : c.plu;
                 return dbCode === pluCode;
@@ -46,27 +45,35 @@ export function findProductByCode(code) {
         }
     } 
     
-    // 2. DİĞER BARKODLAR (Standart ve Koli Barkodları)
+    // 2. Durum: Diğer Barkodlar
     else {
-        // Çarpanlı kod kontrolü
+        // Çarpanlı PLU kontrolü
         for (const product of state.products) {
             if (product.is_weighable && product.plu_codes) {
                 const codeObj = product.plu_codes.find(c => typeof c === 'object' && c.plu === code);
                 if (codeObj && codeObj.multiplier) {
                     return { product, quantity: codeObj.multiplier, isWeighable: true };
                 }
+                // Düz eşleşme (Çarpansız manuel giriş)
+                 const simpleMatch = product.plu_codes.some(c => {
+                    const dbCode = (typeof c === 'string') ? c : c.plu;
+                    return dbCode === code;
+                });
+                if(simpleMatch) {
+                     return { product, quantity: 1, isWeighable: true };
+                }
             }
         }
         
-        // Tam barkod eşleşmesi (Paketli ürünler için)
+        // Standart barkod
         const singleProduct = state.products.find(p => p.barcode === code);
         if (singleProduct) {
             return { product: singleProduct, quantity: 1, isWeighable: false };
         }
-
-        // Koli/Paket barkodu eşleşmesi
+        
+        // Koli barkodu
         for (const product of state.products) {
-            if (product.packaging_options && Array.isArray(product.packaging_options)) {
+             if (product.packaging_options && Array.isArray(product.packaging_options)) {
                 const packagingOption = product.packaging_options.find(opt => opt.barcode === code);
                 if (packagingOption) {
                     return { product: product, quantity: packagingOption.quantity, isWeighable: false };

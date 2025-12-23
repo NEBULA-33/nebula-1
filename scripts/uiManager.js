@@ -114,21 +114,45 @@ export function renderReportChart(title, contentHTML, chartDataCallback, trigger
 function renderProductList() {
     if (!uiElements.productListContainer) return;
     const role = getCurrentRole();
-    const isManager = role === 'manager' || role === 'yönetici'; // İki rol adını da kontrol edelim
+    const isManager = role === 'manager' || role === 'yönetici';
+    
     let table = uiElements.productListContainer.querySelector('table');
     if (!table) {
         table = document.createElement('table');
-        table.innerHTML = `<thead><tr><th>Ürün Adı</th><th>Kategori</th><th>Alış</th><th>Satış</th><th>Stok</th><th>İşlemler</th></tr></thead><tbody></tbody>`;
+        // BAŞLIKLARA 'BARKOD/PLU' SÜTUNU EKLENDİ
+        table.innerHTML = `<thead><tr><th>Ürün Adı</th><th>Kategori</th><th>Alış</th><th>Satış</th><th>Stok</th><th>Barkod/PLU</th><th>İşlemler</th></tr></thead><tbody></tbody>`;
         uiElements.productListContainer.innerHTML = '';
         uiElements.productListContainer.appendChild(table);
     }
+    
     const tbody = table.querySelector('tbody');
     tbody.innerHTML = '';
+    
     (state.products || []).forEach(product => {
         const row = tbody.insertRow();
         const stockUnit = product.is_weighable ? 'kg' : 'adet';
-        // YENİ: "İşlemler" hücresine yönetici için bir "Sil" butonu eklendi.
-        row.innerHTML = `<td>${product.name || 'İsimsiz Ürün'}</td><td>${product.category || '-'}</td><td>${(product.purchase_price || 0).toFixed(2)}</td><td>${(product.selling_price || 0).toFixed(2)}</td><td>${(product.stock || 0).toFixed(product.is_weighable ? 3 : 0)} ${stockUnit}</td><td class="actions"><button class="secondary-btn" onclick="window.app.editProduct(${product.id})">Düzenle</button>${isManager ? `<button class="delete-btn" onclick="window.app.deleteProduct(${product.id})">Sil</button>` : ''}</td>`;
+        
+        // BARKOD GÖSTERİM MANTIĞI
+        let codeDisplay = '-';
+        if (product.is_weighable && product.plu_codes && product.plu_codes.length > 0) {
+            // PLU kodlarını virgülle ayırarak göster (Hem string hem obje desteği)
+            codeDisplay = product.plu_codes.map(c => (typeof c === 'object' ? c.plu : c)).join(', ');
+        } else if (product.barcode) {
+            codeDisplay = product.barcode;
+        }
+
+        row.innerHTML = `
+            <td>${product.name || 'İsimsiz Ürün'}</td>
+            <td>${product.category || '-'}</td>
+            <td>${(product.purchase_price || 0).toFixed(2)}</td>
+            <td>${(product.selling_price || 0).toFixed(2)}</td>
+            <td>${(product.stock || 0).toFixed(product.is_weighable ? 3 : 0)} ${stockUnit}</td>
+            <td style="font-weight:bold; color:#0d47a1;">${codeDisplay}</td> 
+            <td class="actions">
+                <button class="secondary-btn" onclick="window.app.editProduct(${product.id})">Düzenle</button>
+                ${isManager ? `<button class="delete-btn" onclick="window.app.deleteProduct(${product.id})">Sil</button>` : ''}
+            </td>
+        `;
     });
 }
 
