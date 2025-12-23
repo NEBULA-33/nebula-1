@@ -4,14 +4,12 @@ import { getCurrentRole } from './authManager.js';
 import { logAction } from './logManager.js';
 import { supabase } from './supabaseClient.js';
 
-
 let uiElements = {};
 
-// Veri değişikliğinden sonra arayüzü yenilemek için yardımcı fonksiyon
+// Arayüzü yenileme
 async function refreshProducts() {
     const currentShopId = state.currentShop?.id;
     if (!currentShopId) return;
-
     const { data, error } = await supabase.from('products').select('*').eq('shop_id', currentShopId);
     if (error) {
         console.error('Ürünler yenilenemedi:', error);
@@ -28,20 +26,13 @@ function resetProductForm() {
     if (uiElements.productSubmitBtn) uiElements.productSubmitBtn.textContent = 'Ürünü Ekle';
     if (uiElements.cancelEditBtn) uiElements.cancelEditBtn.style.display = 'none';
     if (document.getElementById('packaging-options-container')) {
-    document.getElementById('packaging-options-container').innerHTML = '';
-}
-
-    const fieldsToToggle = [
-        uiElements.purchasePriceInput,
-        uiElements.sellingPriceInput,
-        uiElements.stockQuantityInput
-    ];
-    fieldsToToggle.forEach(field => {
-        if(field) {
-            field.readOnly = false;
-            field.disabled = false;
-        }
-    });
+        document.getElementById('packaging-options-container').innerHTML = '';
+    }
+    
+    // Düzenleme sonrası kilitli alanları aç
+    if(uiElements.purchasePriceInput) uiElements.purchasePriceInput.disabled = false;
+    if(uiElements.sellingPriceInput) uiElements.sellingPriceInput.disabled = false;
+    if(uiElements.stockQuantityInput) uiElements.stockQuantityInput.disabled = false;
 
     toggleProductFields();
 }
@@ -59,7 +50,8 @@ function toggleProductFields() {
         uiElements.barcodeSection.style.display = 'block';
     }
 }
-// Eski 'addPluInput' fonksiyonunu SİL, bunu YAPIŞTIR:
+
+// --- BARKOD EKLEME KUTUSU (DÜZELTİLDİ: Enter ile kırpar) ---
 function addPluInput(plu = '', multiplier = '') {
     if (!uiElements.pluCodesContainer) return;
     
@@ -75,27 +67,22 @@ function addPluInput(plu = '', multiplier = '') {
         <button type="button" class="delete-btn">Sil</button>
     `;
 
-    // --- OTOMATİK TEMİZLEME KODU ---
     const inputField = group.querySelector('.plu-code-input');
-    inputField.addEventListener('input', (e) => {
+    
+    // YAZARKEN DEĞİL, ENTER'A BASINCA VEYA KUTUDAN ÇIKINCA KIRPAR
+    inputField.addEventListener('change', (e) => {
         const val = e.target.value.trim();
-        // Barkod 27, 28 veya 29 ile başlıyorsa ve 12 karakterden uzunsa içindeki 5 haneyi (PLU) al
+        // Terazi barkodu (27-29 ile başlar, 12+ hane) ise kırp
         if (val.length >= 12 && (val.startsWith('27') || val.startsWith('28') || val.startsWith('29'))) {
             e.target.value = val.substring(2, 7); 
-            // Görsel efekt
             e.target.style.backgroundColor = '#e7f3ff';
             setTimeout(() => e.target.style.backgroundColor = '', 500);
         }
     });
-    // -------------------------------
 
     group.querySelector('.delete-btn').onclick = () => group.remove();
     uiElements.pluCodesContainer.appendChild(group);
 }
-
-// Eski 'handleProductFormSubmit' fonksiyonunu SİL, bunu YAPIŞTIR:
-
-// productManager.js dosyasında, addPluInput fonksiyonundan sonra EKLE
 
 function addPackagingInput(barcode = '', quantity = '') {
     if (!uiElements.packagingOptionsContainer) {
@@ -116,23 +103,19 @@ function addPackagingInput(barcode = '', quantity = '') {
     uiElements.packagingOptionsContainer.appendChild(group);
 }
 
-
-// scripts/productManager.js içine, eski handleProductFormSubmit fonksiyonlarının YERİNE:
-
+// --- ANA KAYDETME FONKSİYONU (DÜZELTİLDİ: Tek ve Sorunsuz) ---
 async function handleProductFormSubmit(e) {
     e.preventDefault();
     
     const currentShopId = state.currentShop?.id;
-    if (!currentShopId) return alert("Aktif dükkan seçilemedi! Lütfen tekrar giriş yapın.");
+    if (!currentShopId) return alert("Aktif dükkan seçilemedi!");
 
     const editingId = uiElements.editProductIdInput.value ? parseInt(uiElements.editProductIdInput.value) : null;
-    
     const productName = uiElements.productNameInput.value.trim();
     const sellingPrice = parseFloat(uiElements.sellingPriceInput.value);
     const stockToAdd = parseFloat(uiElements.stockQuantityInput.value) || 0;
 
-    // --- 1. AŞAMA: AYNI İSİMDE ÜRÜN VAR MI KONTROLÜ (Stok Güncelleme) ---
-    // Eğer düzenleme modunda değilsek kontrol et
+    // 1. AYNI ÜRÜN VAR MI KONTROLÜ (Stok Ekleme Modu)
     if (!editingId && productName && !isNaN(sellingPrice)) {
         const { data: existingProduct, error: findError } = await supabase
             .from('products')
@@ -142,37 +125,24 @@ async function handleProductFormSubmit(e) {
             .eq('selling_price', sellingPrice)
             .single();
 
-        if (findError && findError.code !== 'PGRST116') { 
-            return alert(`Ürün kontrol edilirken hata: ${findError.message}`);
-        }
-
-        // Eğer ürün bulunduysa, sadece stoğunu artır ve çık
         if (existingProduct) {
             const newStock = (existingProduct.stock || 0) + stockToAdd;
             const { error: updateError } = await supabase
                 .from('products')
-                .update({ stock: newStock, purchase_price: parseFloat(uiElements.purchasePriceInput.value) }) 
+                .update({ stock: newStock }) 
                 .eq('id', existingProduct.id);
 
-            if (updateError) {
-                return alert(`Stok güncellenirken hata: ${updateError.message}`);
-            }
-
-            // Logla ve bitir
-            // (Eğer logAction import edilmediyse hata vermemesi için kontrol edilebilir ama sen import etmişsin)
-            if (typeof logAction === 'function') {
-                 await logAction('PRODUCT_STOCK_ADD', { productName: productName, addedStock: stockToAdd });
-            }
+            if (updateError) return alert(`Hata: ${updateError.message}`);
+            
+            if(typeof logAction === 'function') await logAction('PRODUCT_STOCK_ADD', { productName: productName, addedStock: stockToAdd });
             await refreshProducts();
             resetProductForm();
             alert(`"${productName}" zaten vardı, stoğu güncellendi.`);
-            return; // İŞLEM TAMAM, FONKSİYONDAN ÇIK
+            return; 
         }
     }
 
-    // --- 2. AŞAMA: YENİ ÜRÜN KAYDETME VEYA DÜZENLEME ---
-    
-    // PLU KODLARINI DOĞRU TOPLAMA (Senin istediğin düzeltme burada)
+    // 2. PLU KODLARINI TOPLAMA (HATA BURADAYDI, DÜZELTİLDİ)
     const pluCodes = [];
     if (uiElements.pluCodesContainer) {
         uiElements.pluCodesContainer.querySelectorAll('.plu-input-group').forEach(group => {
@@ -182,12 +152,12 @@ async function handleProductFormSubmit(e) {
             const plu = pluInput ? pluInput.value.trim() : '';
             const multiplierVal = multiplierInput ? multiplierInput.value : '';
             
-            // Çarpan BOŞ OLSA BİLE kaydet (Önemli Kısım!)
+            // Çarpan boş olsa BİLE kaydet
             if (plu) {
                 if (multiplierVal && parseFloat(multiplierVal) > 0) {
                     pluCodes.push({ plu: plu, multiplier: parseFloat(multiplierVal) });
                 } else {
-                    pluCodes.push({ plu: plu }); // Çarpansız obje olarak kaydet
+                    pluCodes.push({ plu: plu }); 
                 }
             }
         });
@@ -211,7 +181,7 @@ async function handleProductFormSubmit(e) {
         category: uiElements.productCategoryInput.value.trim(),
         is_weighable: uiElements.isWeighableCheckbox.checked,
         show_in_quick_add: uiElements.showInQuickAddCheckbox.checked,
-        plu_codes: pluCodes, // Düzeltilmiş liste
+        plu_codes: pluCodes, 
         barcode: uiElements.productBarcodeInput.value.trim(),
         vat_rate: parseFloat(uiElements.productVatRateSelect.value),
         packaging_options: packagingOptions,
@@ -221,13 +191,11 @@ async function handleProductFormSubmit(e) {
 
     let error;
     if (editingId) {
-        // Düzenleme
         productData.stock = stockToAdd;
         const { error: updateError } = await supabase.from('products').update(productData).eq('id', editingId);
         error = updateError;
         if (!error && typeof logAction === 'function') await logAction('PRODUCT_UPDATE', { productId: editingId, productName: productData.name });
     } else {
-        // Yeni Kayıt
         productData.stock = stockToAdd;
         const { error: insertError } = await supabase.from('products').insert([productData]);
         error = insertError;
@@ -235,16 +203,13 @@ async function handleProductFormSubmit(e) {
     }
 
     if (error) {
-        console.error('Ürün işlemi başarısız:', error);
         alert(`Hata: ${error.message}`);
     } else {
         await refreshProducts();
         resetProductForm();
-        alert("İşlem başarıyla kaydedildi.");
+        alert("Ürün başarıyla kaydedildi.");
     }
 }
-
-
 
 function editProduct(id) {
     const product = state.products.find(p => p.id === id);
@@ -264,24 +229,29 @@ function editProduct(id) {
     uiElements.stockQuantityInput.value = product.stock;
     
     if (product.is_weighable && product.plu_codes) {
-    product.plu_codes.forEach(codeObj => addPluInput(codeObj.plu, codeObj.multiplier));
-}
+        // Eski kayıtlar string olabilir, yeni kayıtlar obje. İkisini de destekle.
+        product.plu_codes.forEach(codeObj => {
+            if (typeof codeObj === 'object') {
+                addPluInput(codeObj.plu, codeObj.multiplier);
+            } else {
+                addPluInput(codeObj);
+            }
+        });
+    }
     
     toggleProductFields();
-    if (!uiElements.packagingOptionsContainer) {
-    uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
-}
-// Önceki koli girdilerini temizle
-uiElements.packagingOptionsContainer.innerHTML = ''; 
-// Kayıtlı koli seçeneklerini forma ekle
-if (product.packaging_options) {
-    product.packaging_options.forEach(opt => addPackagingInput(opt.barcode, opt.quantity));
-}
-
-  const role = getCurrentRole();
-    const isManager = (role === 'manager' || role === 'yönetici'); // Rol adını kontrol edelim
     
-    // YÖNETİCİ DEĞİLSE, SADECE YÖNETİCİYE ÖZEL ALANLARI KİLİTLE
+    if (!uiElements.packagingOptionsContainer) {
+        uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
+    }
+    uiElements.packagingOptionsContainer.innerHTML = ''; 
+    if (product.packaging_options) {
+        product.packaging_options.forEach(opt => addPackagingInput(opt.barcode, opt.quantity));
+    }
+
+    const role = getCurrentRole();
+    const isManager = (role === 'manager' || role === 'yönetici');
+    
     uiElements.purchasePriceInput.disabled = !isManager;
     uiElements.sellingPriceInput.disabled = !isManager; 
     uiElements.stockQuantityInput.disabled = !isManager;
@@ -294,18 +264,12 @@ if (product.packaging_options) {
 async function deleteProduct(id) {
     const currentShopId = state.currentShop?.id;
     const productName = state.products.find(p => p.id === id)?.name || 'Bu ürün';
-    if (confirm(`'${productName}' adlı ürünü ve tüm geçmişini (satışlar, stok hareketleri vb.) kalıcı olarak silmek istediğinizden emin misiniz?`)) {
-        const { error } = await supabase
-            .from('products')
-            .delete()
-            .eq('id', id)
-            .eq('shop_id', currentShopId);
-
+    if (confirm(`'${productName}' adlı ürünü silmek istediğinizden emin misiniz?`)) {
+        const { error } = await supabase.from('products').delete().eq('id', id).eq('shop_id', currentShopId);
         if (error) {
-            console.error('Ürün silinemedi:', error);
             alert(`Hata: ${error.message}`);
         } else {
-            await logAction('PRODUCT_DELETE', { productId: id, productName: productName });
+            if(typeof logAction === 'function') await logAction('PRODUCT_DELETE', { productId: id, productName: productName });
             await refreshProducts();
         }
     }
@@ -316,11 +280,12 @@ export function initializeProductManager(elements) {
     window.app = window.app || {};
     window.app.editProduct = editProduct;
     window.app.deleteProduct = deleteProduct;
+    
     uiElements.addPackagingBtn = document.getElementById('add-packaging-btn');
-uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
-if (uiElements.addPackagingBtn) {
-    uiElements.addPackagingBtn.addEventListener('click', () => addPackagingInput());
-}
+    uiElements.packagingOptionsContainer = document.getElementById('packaging-options-container');
+    if (uiElements.addPackagingBtn) {
+        uiElements.addPackagingBtn.addEventListener('click', () => addPackagingInput());
+    }
     if (uiElements.productForm) uiElements.productForm.addEventListener('submit', handleProductFormSubmit);
     if (uiElements.isWeighableCheckbox) uiElements.isWeighableCheckbox.addEventListener('change', toggleProductFields);
     if (uiElements.addPluBtn) uiElements.addPluBtn.addEventListener('click', () => addPluInput());
