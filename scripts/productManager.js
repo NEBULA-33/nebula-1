@@ -62,17 +62,60 @@ function toggleProductFields() {
 
 function addPluInput(plu = '', multiplier = '') {
     if (!uiElements.pluCodesContainer) return;
+    
     const group = document.createElement('div');
     group.className = 'form-row plu-input-group';
     group.innerHTML = `
         <div class="form-group" style="flex: 2;">
-            <input type="text" class="plu-code-input" placeholder="5 haneli PLU" value="${plu}">
+            <input type="text" class="plu-code-input" placeholder="Barkodu okutun..." value="${plu}">
         </div>
         <div class="form-group" style="flex: 1;">
-            <input type="number" class="plu-multiplier-input" placeholder="Çarpan (Kg/Adet)" value="${multiplier}" step="0.001">
+            <input type="number" class="plu-multiplier-input" placeholder="Çarpan" value="${multiplier}" step="0.001">
         </div>
         <button type="button" class="delete-btn">Sil</button>
     `;
+
+    const inputField = group.querySelector('.plu-code-input');
+    
+    // Barkod okutulduğunda veya elle girildiğinde çalışacak kısım:
+    inputField.addEventListener('change', (e) => {
+        const val = e.target.value.trim();
+        let finalCode = val;
+
+        // 1. ADIM: OTOMATİK KIRPMA (Terazi barkoduysa içindeki 5 haneyi al)
+        if (val.length >= 12 && (val.startsWith('27') || val.startsWith('28') || val.startsWith('29'))) {
+            finalCode = val.substring(2, 7);
+            e.target.value = finalCode; // Kutudaki değeri düzelt
+            
+            // Görsel efekt (Kırpıldığını anla diye mavi yanıp söner)
+            e.target.style.backgroundColor = '#e7f3ff';
+            setTimeout(() => e.target.style.backgroundColor = '', 500);
+        }
+
+        // 2. ADIM: ÇAKIŞMA KONTROLÜ (Bu kod başkasında var mı?)
+        // Şu an düzenlediğimiz ürünün ID'sini alalım ki kendi kendine çakışmasın
+        const currentEditingId = uiElements.editProductIdInput.value ? parseInt(uiElements.editProductIdInput.value) : null;
+
+        // Tüm ürünleri tara
+        const conflictProduct = state.products.find(p => {
+            // Kendi ürünümüzü kontrol etme, diğerlerine bak
+            if (p.id === currentEditingId) return false;
+            
+            // O ürünün PLU kodları arasında bizim kod var mı?
+            return p.plu_codes && p.plu_codes.some(c => {
+                // Kod veritabanında bazen düz yazı ("101"), bazen obje ({plu:"101"}) olabilir, ikisine de bak
+                const existingCode = (typeof c === 'string') ? c : c.plu;
+                return existingCode === finalCode;
+            });
+        });
+
+        // Eğer çakışan ürün bulursak uyarı patlat
+        if (conflictProduct) {
+            alert(`⚠️ DİKKAT: Bu kod (${finalCode}) şu anda '${conflictProduct.name}' adlı üründe zaten kayıtlı!`);
+            // "Uyarsın yeter" dediğin için silmiyorum, karar senin.
+        }
+    });
+
     group.querySelector('.delete-btn').onclick = () => group.remove();
     uiElements.pluCodesContainer.appendChild(group);
 }

@@ -24,34 +24,47 @@ async function refreshData() {
 // stockManager.js içindeki findProductByCode fonksiyonunun İLK if bloğunu bununla DEĞİŞTİR
 
 export function findProductByCode(code) {
-    // Tartılabilir ürünleri iki farklı şekilde kontrol edeceğiz
-    if (code.startsWith('28') && code.length >= 12) { // Standart Terazi Barkodu
-        const pluCode = code.substring(2, 7);
-        const weightInGrams = parseInt(code.substring(7, 12));
-        // Ürünü, plu_codes dizisinin içindeki 'plu' anahtarına göre bul
-        const product = state.products.find(p => p.is_weighable && p.plu_codes && p.plu_codes.some(c => c.plu === pluCode));
+    // 1. TERAZİ BARKODU KONTROLÜ (Örn: 28 01050 00550 1)
+    if ((code.startsWith('27') || code.startsWith('28') || code.startsWith('29')) && code.length >= 12) { 
+        const pluCode = code.substring(2, 7); // Barkodun içinden 01050'yi çek
+        const weightPart = code.substring(7, 12); // Ağırlığı çek
+        const weightInGrams = parseInt(weightPart);
+
+        // Şimdi elimizdeki kısa "pluCode" ile ürünleri ara
+        const product = state.products.find(p => {
+            if (!p.is_weighable || !p.plu_codes) return false;
+            
+            // Ürünün kodları arasında bu kısa kod var mı?
+            return p.plu_codes.some(c => {
+                const dbCode = (typeof c === 'string') ? c : c.plu;
+                return dbCode === pluCode;
+            });
+        });
+
         if (product && !isNaN(weightInGrams)) {
-            // Terazi barkodundan gelen gerçek ağırlığı kullan
             return { product, quantity: weightInGrams / 1000.0, isWeighable: true };
         }
-    } else { // Çarpanlı Özel Barkod veya Standart Tekil Barkod
-        // Önce çarpanlı PLU kodlarını kontrol et
+    } 
+    
+    // 2. DİĞER BARKODLAR (Standart ve Koli Barkodları)
+    else {
+        // Çarpanlı kod kontrolü
         for (const product of state.products) {
             if (product.is_weighable && product.plu_codes) {
-                const codeObj = product.plu_codes.find(c => c.plu === code);
-                if (codeObj) {
-                    // Eğer eşleşme bulunursa, ürünü ve tanımlanmış çarpanı döndür
+                const codeObj = product.plu_codes.find(c => typeof c === 'object' && c.plu === code);
+                if (codeObj && codeObj.multiplier) {
                     return { product, quantity: codeObj.multiplier, isWeighable: true };
                 }
             }
         }
         
-        // Eğer yukarıda bulunamazsa, standart tekil/koli barkodlarına bakmaya devam et
+        // Tam barkod eşleşmesi (Paketli ürünler için)
         const singleProduct = state.products.find(p => p.barcode === code);
         if (singleProduct) {
             return { product: singleProduct, quantity: 1, isWeighable: false };
         }
 
+        // Koli/Paket barkodu eşleşmesi
         for (const product of state.products) {
             if (product.packaging_options && Array.isArray(product.packaging_options)) {
                 const packagingOption = product.packaging_options.find(opt => opt.barcode === code);
@@ -92,7 +105,7 @@ function handleStockInScan(e) {
     uiElements.stockInBarcodeScanInput.focus();
 }
 
-// --- YENİ EKLENEN FONKSİYONLAR ---
+
 
 // Listeden bir ürünü tamamen silme
 function removeFromStockInList(timestamp) {
